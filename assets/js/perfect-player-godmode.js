@@ -204,13 +204,18 @@
   function injectStyles() {
     if (document.getElementById('god-mode-style')) return;
     var css =
-      '#god-mode-badge{position:fixed;right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0px));' +
-      'z-index:280;display:none;align-items:center;gap:6px;padding:9px 15px;border-radius:999px;' +
-      'border:2px solid var(--gold,#dfa62f);background:linear-gradient(135deg,#2a1c05,#5c3f0b);' +
-      'color:#f7d488;font-family:var(--font-athletic),"Oswald","Noto Sans SC",sans-serif;' +
-      'font-size:13px;letter-spacing:.5px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.28)}' +
-      '#god-mode-badge.show{display:inline-flex}' +
-      '#god-mode-badge:active{transform:translateY(1px)}' +
+      '#god-mode-badge{position:fixed;right:calc(70px + env(safe-area-inset-right,0px));' +
+      'bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:8800;width:50px;height:50px;' +
+      'border-radius:50%;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;' +
+      'background:linear-gradient(145deg,#ff8a5c,#ff6b35);color:#fff;font-size:22px;line-height:1;' +
+      'box-shadow:0 6px 18px rgba(255,107,53,.42),inset 0 2px 4px rgba(255,255,255,.35);' +
+      'transition:transform .15s ease}' +
+      '#god-mode-badge.show{display:flex}' +
+      '#god-mode-badge:active{transform:scale(.9)}' +
+      '#god-mode-badge .gm-badge-ic{line-height:1;pointer-events:none}' +
+      '#god-mode-badge .gm-badge-cnt{position:absolute;top:-3px;right:-3px;z-index:1;min-width:18px;height:18px;' +
+      'padding:0 4px;box-sizing:border-box;border-radius:999px;background:#d63a3a;color:#fff;' +
+      'font-size:11px;font-weight:700;line-height:18px;text-align:center;display:inline-block}' +
       '#god-mode-modal .gm-body{padding:14px;overflow-y:auto;-webkit-overflow-scrolling:touch}' +
       '.gm-group-title{font-family:var(--font-athletic),"Oswald","Noto Sans SC",sans-serif;font-size:14px;' +
       'letter-spacing:.5px;color:var(--orange,#d85822);margin:16px 0 8px}' +
@@ -234,6 +239,20 @@
     document.head.appendChild(el);
   }
 
+  function applyBadgeState(badge, n) {
+    var cnt = badge.querySelector('.gm-badge-cnt');
+    if (n > 0) {
+      if (!cnt) { cnt = document.createElement('span'); cnt.className = 'gm-badge-cnt'; badge.appendChild(cnt); }
+      cnt.textContent = n;
+      badge.title = '专属特权 · ' + n + ' 项已开启';
+      badge.setAttribute('aria-label', '专属特权 · ' + n + ' 项已开启');
+    } else {
+      if (cnt) cnt.remove();
+      badge.title = '打开专属特权面板';
+      badge.setAttribute('aria-label', '打开专属特权面板');
+    }
+  }
+
   function syncBadge() {
     var badge = document.getElementById(BADGE_ID);
     var visible = isEligible();
@@ -241,14 +260,15 @@
       var active = activeList();
       var screen = document.querySelector('.screen.active');
       if (screen && HIDE_BADGE_SCREENS.indexOf(screen.id) >= 0) visible = false;
-      if (badge) badge.textContent = active.length ? ('⚡ 专属特权 · ' + active.length) : '⚡ 专属特权';
+      if (badge) applyBadgeState(badge, active.length);
     }
     if (visible && !badge) {
       badge = document.createElement('button');
       badge.type = 'button';
       badge.id = BADGE_ID;
-      badge.textContent = '⚡ 专属特权';
+      badge.innerHTML = '<span class="gm-badge-ic">⚡</span>';
       badge.setAttribute('aria-label', '打开专属特权面板');
+      badge.title = '打开专属特权面板';
       badge.addEventListener('click', openPanel);
       document.body.appendChild(badge);
     }
