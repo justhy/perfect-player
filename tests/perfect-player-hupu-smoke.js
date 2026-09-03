@@ -798,6 +798,58 @@ async function main() {
     });
     assert.ok(characterBounds.top >= -1 && characterBounds.bottom <= characterBounds.viewport + 1, '角色创建可操作区应在手机单屏内');
 
+    // ---- 专属特权（God Mode）：名单匹配、即时提示、特权 API ----
+    await page.waitForFunction(() => window.PP_GOD && window.PP_GOD.isReady && window.PP_GOD.isReady(), null, { timeout: 10000 });
+    const godApi = await page.evaluate(() => ({
+      ready: window.PP_GOD.isReady(),
+      hasConfig: window.PP_GOD.hasConfig(),
+      totalCheats: window.PP_GOD.list().reduce((n, g) => n + g.cheats.length, 0),
+      matchesPrynox: window.PP_GOD.matches('Prynox'),
+      matchesLower: window.PP_GOD.matches('prynox'),
+      matchesPartial: window.PP_GOD.matches('Pryno'),
+      matchesEmpty: window.PP_GOD.matches('')
+    }));
+    assert.equal(godApi.ready, true, '专属特权配置应加载完成');
+    assert.equal(godApi.hasConfig, true, '专属特权应成功解析 god-mode.json');
+    assert.equal(godApi.totalCheats, 20, '专属特权面板应提供 20 项特权');
+    assert.equal(godApi.matchesPrynox, true, '精确匹配 Prynox 应命中名单');
+    assert.equal(godApi.matchesLower, false, '大小写不敏感不应命中（config.caseSensitive=true）');
+    assert.equal(godApi.matchesPartial, false, 'Pryno 不应命中名单');
+    assert.equal(godApi.matchesEmpty, false, '空名不应命中名单');
+
+    await page.fill('#character-name', 'Prynox');
+    await page.waitForSelector('#character-god-hint', { timeout: 5000 });
+    const hintText = await page.$eval('#character-god-hint', el => el.textContent);
+    assert.ok(hintText.indexOf('专属特权') >= 0, '命中名单时应显示专属特权提示');
+    await page.fill('#character-name', 'prynox');
+    await page.waitForTimeout(120);
+    const hintAfterLower = await page.evaluate(() => { const h = document.getElementById('character-god-hint'); return h ? h.textContent : ''; });
+    assert.equal(hintAfterLower, '', '大小写不匹配时提示应清空');
+
+    const elig = await page.evaluate(() => {
+      const saved = window.PERFECT_PLAYER_PROFILE;
+      try {
+        window.PERFECT_PLAYER_PROFILE = { name: 'Prynox', avatar: 'x' };
+        const on = window.PP_GOD.isEligible();
+        const activeBefore = window.PP_GOD.activeList();
+        window.PP_GOD.toggle('infinite_reroll');
+        const afterToggle = window.PP_GOD.isOn('infinite_reroll');
+        const activeAfter = window.PP_GOD.activeList();
+        window.PP_GOD.reset();
+        const afterReset = window.PP_GOD.isOn('infinite_reroll');
+        return { on, activeBefore, afterToggle, activeAfter, afterReset };
+      } finally {
+        window.PERFECT_PLAYER_PROFILE = saved;
+      }
+    });
+    assert.equal(elig.on, true, '名为 Prynox 时应具备专属特权资格');
+    assert.deepEqual(elig.activeBefore, [], '默认所有特权应关闭');
+    assert.equal(elig.afterToggle, true, 'toggle 应打开特权');
+    assert.equal(elig.activeAfter.length, 1, 'activeList 应反映已开启项');
+    assert.equal(elig.afterReset, false, 'reset 应关闭所有特权');
+
+    await page.fill('#character-name', '林一飞'); // 还原为正常流程使用的名字
+
     await page.screenshot({ path: path.join(outputDir, '01-character.png'), fullPage: false });
 
     await page.evaluate(() => {

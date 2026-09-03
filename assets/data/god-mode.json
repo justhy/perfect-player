@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "enabled": true,
+  "caseSensitive": true,
+  "names": ["Prynox"],
+  "groups": [
+    { "id": "build", "name": "造神", "desc": "让建球员阶段不再看脸" },
+    { "id": "immortal", "name": "不朽", "desc": "时间、伤病与合同不再束缚你" },
+    { "id": "control", "name": "掌控", "desc": "选秀、球队与比赛结果由你决定" }
+  ],
+  "cheats": [
+    {
+      "id": "infinite_reroll",
+      "group": "build",
+      "name": "无限重抽",
+      "desc": "换球员次数不再减少，直到抽到满意的属性",
+      "default": false
+    },
+    {
+      "id": "always_historical",
+      "group": "build",
+      "name": "历史卡必出",
+      "desc": "每轮必定出现历史巅峰卡，且不再限制每轮 1 张",
+      "default": false
+    },
+    {
+      "id": "no_team_swap",
+      "group": "build",
+      "name": "锁完不换队",
+      "desc": "锁定属性后不再强制跳转下一支球队，可在同一队连续挖属性",
+      "default": false
+    },
+    {
+      "id": "infinite_team_reroll",
+      "group": "build",
+      "name": "无限换队",
+      "desc": "建球员阶段可无限次重新抽取/切换球队，无需先锁定属性",
+      "default": false
+    },
+    {
+      "id": "no_pos_penalty",
+      "group": "build",
+      "name": "取消位置衰减",
+      "desc": "跨位置抽取属性时不再打折扣，始终 100% 继承",
+      "default": false
+    },
+    {
+      "id": "break_99",
+      "group": "build",
+      "name": "属性突破 99",
+      "desc": "单项属性上限由 99 提升到 125",
+      "default": false
+    },
+    {
+      "id": "free_training",
+      "group": "build",
+      "name": "训练一律 1 点",
+      "desc": "无论属性多高，每加 1 点只消耗 1 点训练预算",
+      "default": false
+    },
+    {
+      "id": "rich_points",
+      "group": "build",
+      "name": "训练点给满",
+      "desc": "每个休赛期直接获得 99 点训练预算",
+      "default": false
+    },
+    {
+      "id": "no_train_cap",
+      "group": "build",
+      "name": "解除 +8 封顶",
+      "desc": "单项属性每赛季不再受最多 +8 的限制",
+      "default": false
+    },
+    {
+      "id": "infinite_legacy",
+      "group": "build",
+      "name": "传承点无限",
+      "desc": "成就全解锁也只有 117 点，全树需要 184 点，正常永远点不满",
+      "default": false
+    },
+    {
+      "id": "legacy_no_max",
+      "group": "build",
+      "name": "传承等级无上限",
+      "desc": "祭坛每条强化路线都可突破原本的 5 / 4 / 3 级上限",
+      "default": false
+    },
+
+    {
+      "id": "no_decline",
+      "group": "immortal",
+      "name": "关闭年龄衰退",
+      "desc": "35 岁之后属性不再逐年下滑，高位属性也不再额外承压",
+      "default": false
+    },
+    {
+      "id": "no_retire",
+      "group": "immortal",
+      "name": "永不退役",
+      "desc": "退役风险归零，生涯年龄上限由 42 岁提高到 60 岁",
+      "default": false
+    },
+    {
+      "id": "no_injury",
+      "group": "immortal",
+      "name": "免疫伤病",
+      "desc": "伤病一出现立即清零缺战场次，不会再被动跳过比赛",
+      "default": false
+    },
+    {
+      "id": "free_contract",
+      "group": "immortal",
+      "name": "合同年限自由",
+      "desc": "老将不再被限制为 1 年短约，最长可签 10 年",
+      "default": false
+    },
+
+    {
+      "id": "lock_first_pick",
+      "group": "control",
+      "name": "锁定状元",
+      "desc": "选秀顺位固定为第 1 顺位，去掉 ±3 随机与掉次轮的可能",
+      "default": false
+    },
+    {
+      "id": "all_offers",
+      "group": "control",
+      "name": "30 队全报价",
+      "desc": "不再只有缺人的球队报价，全部 30 支球队任你挑选",
+      "default": false
+    },
+    {
+      "id": "no_trade_waive",
+      "group": "control",
+      "name": "不被交易裁员",
+      "desc": "休赛期不会被球队交易或裁掉，母队也必定愿意续约",
+      "default": false
+    },
+    {
+      "id": "auto_win",
+      "group": "control",
+      "name": "比赛必胜",
+      "desc": "常规赛与季后赛每场强制取胜，82 场模拟将失去悬念",
+      "default": false
+    },
+    {
+      "id": "hot_hand",
+      "group": "control",
+      "name": "手感保底",
+      "desc": "大幅提高出手命中率下限，个人数据不会再出现灾难性崩盘",
+      "default": false
+    }
+  ]
+}

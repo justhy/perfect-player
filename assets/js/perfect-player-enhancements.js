@@ -563,7 +563,7 @@
       return sum + (LP_BY_RARITY[achievement.rarity] || 0);
     }, 0);
   }
-  function availableLP() { return Math.max(0, totalLP() - (legacy.spent || 0)); }
+  function availableLP() { return (window.PP_GOD && window.PP_GOD.isOn('infinite_legacy')) ? 999999 : Math.max(0, totalLP() - (legacy.spent || 0)); }
   PP_FX.totalLP = totalLP;
   PP_FX.maxLegacyLP = maxLegacyLP;
   PP_FX.availableLP = availableLP;
@@ -589,7 +589,7 @@
     var p = PERK_MAP[id];
     if (!p) return false;
     var lvl = legacy.levels[id] || 0;
-    if (lvl >= p.max) return false;
+    if (lvl >= p.max && !(window.PP_GOD && window.PP_GOD.isOn('legacy_no_max'))) return false;
     var cost = getPerkLevelCost(p, lvl);
     if (availableLP() < cost) return false;
     legacy.levels[id] = lvl + 1;
@@ -609,9 +609,10 @@
   // 传承祭坛面板
   function legacyPerkCardHtml(p) {
     var lvl = legacy.levels[p.id] || 0;
+    var _noMax = window.PP_GOD && window.PP_GOD.isOn('legacy_no_max');
     var maxed = lvl >= p.max;
-    var nextCost = maxed ? 0 : getPerkLevelCost(p, lvl);
-    var canBuy = !maxed && availableLP() >= nextCost;
+    var nextCost = (_noMax && maxed) ? getPerkLevelCost(p, lvl) : (maxed ? 0 : getPerkLevelCost(p, lvl));
+    var canBuy = (_noMax || !maxed) && availableLP() >= nextCost;
     var pips = '';
     for (var i = 0; i < p.max; i++) {
       pips += '<span class="pp-lg-pip' + (i < lvl ? ' on' : '') + '"></span>';
@@ -624,7 +625,7 @@
         '<div class="pp-lg-pips">' + pips + '</div>' +
       '</div>' +
       '<button class="pp-lg-buy" data-perk="' + p.id + '"' + (canBuy ? '' : ' disabled') + '>' +
-        (maxed ? '满级' : ('🧬 ' + nextCost)) + '</button>' +
+        ((maxed && !_noMax) ? '满级' : ('🧬 ' + nextCost)) + '</button>' +
     '</div>';
   }
 
