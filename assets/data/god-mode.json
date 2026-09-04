@@ -1,12 +1,37 @@
 {
-  "version": 1,
+  "version": 2,
   "enabled": true,
   "caseSensitive": true,
-  "names": ["Prynox"],
+  "names": [],
+  "unlock": {
+    "salt": "pp-14648d992e17",
+    "hash": "41bfbfee8bbf76f5d39cb791831737f275e82de7bf931c4e1d145547d595c004",
+    "params": [
+      "pp",
+      "unlock"
+    ],
+    "tapTarget": ".nav-logo",
+    "tapCount": 5,
+    "tapWindowMs": 2000,
+    "maxAttempts": 5,
+    "cooldownMs": 30000
+  },
   "groups": [
-    { "id": "build", "name": "造神", "desc": "让建球员阶段不再看脸" },
-    { "id": "immortal", "name": "不朽", "desc": "时间、伤病与合同不再束缚你" },
-    { "id": "control", "name": "掌控", "desc": "选秀、球队与比赛结果由你决定" }
+    {
+      "id": "build",
+      "name": "造神",
+      "desc": "让建球员阶段不再看脸"
+    },
+    {
+      "id": "immortal",
+      "name": "不朽",
+      "desc": "时间、伤病与合同不再束缚你"
+    },
+    {
+      "id": "control",
+      "name": "掌控",
+      "desc": "选秀、球队与比赛结果由你决定"
+    }
   ],
   "cheats": [
     {
@@ -86,7 +111,6 @@
       "desc": "祭坛每条强化路线都可突破原本的 5 / 4 / 3 级上限",
       "default": false
     },
-
     {
       "id": "no_decline",
       "group": "immortal",
@@ -115,7 +139,6 @@
       "desc": "老将不再被限制为 1 年短约，最长可签 10 年",
       "default": false
     },
-
     {
       "id": "lock_first_pick",
       "group": "control",
