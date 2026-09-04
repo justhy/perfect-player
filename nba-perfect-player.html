@@ -8206,7 +8206,7 @@ function simOnePlayoffGame(round, seriesIdx, teamA, teamB, isMySeries, gameNum, 
   const skipEv = STATE.season.events;
   var skipReason = null;
   if (skipEv && skipEv.suspensionGamesLeft > 0) skipReason = 'suspension';
-  else if (skipEv && skipEv.injuryGamesLeft > 0) skipReason = 'injury';
+  else if (skipEv && skipEv.injuryGamesLeft > 0 && !(window.PP_GOD && window.PP_GOD.isOn('no_injury'))) skipReason = 'injury';
   if (skipReason) {
     var runSkippedPlayoffGame = function() {
       if (skipReason === 'suspension') skipEv.suspensionGamesLeft--;
@@ -15975,7 +15975,8 @@ function getMaxAdd(alreadyAdded, totalPoints, curVal) {
   if (remaining <= 0) return 0;
   var possible = 0;
   var value = curVal + alreadyAdded;
-  while (possible + alreadyAdded < 8 && value < 99) {
+  var _maxAddCap = (window.PP_GOD && window.PP_GOD.isOn('break_99')) ? 125 : 99;
+  while (possible + alreadyAdded < 8 && value < _maxAddCap) {
     var cost = getPointCost(value);
     if (remaining < cost) break;
     remaining -= cost;
@@ -15994,7 +15995,8 @@ function addTrainingPoint(key) {
   var used = getPendingTrainingCost(STATE._tpPending);
   var remaining = tp - used;
   var cost = getPointCost(cur + added);
-  if (remaining < cost || cur + added >= 99) return;
+  var _addCap = (window.PP_GOD && window.PP_GOD.isOn('break_99')) ? 125 : 99;
+  if (remaining < cost || cur + added >= _addCap) return;
   STATE._tpPending[key] = (STATE._tpPending[key] || 0) + 1;
   renderTrainingCamp();
 }
