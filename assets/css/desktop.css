@@ -1,0 +1,157 @@
+/* ============================================================
+   Desktop Adaptation — 桌面浏览器排版放大
+   仅 @media (min-width:960px) 生效；手机端(<960px)完全不受影响。
+   上游 nba-perfect-player.html 更新后若丢失本文件的 <link>，请重挂：
+     <link href="assets/css/desktop.css" rel="stylesheet">
+   （插入在 assets/css/perfect-player-premium.css 的 <link> 之后）
+   ============================================================ */
+
+@media (min-width: 960px) {
+  /* ---- 1) 容器：整页加宽，窄栏居中 ---- */
+  #app{max-width:960px;padding-right:calc(20px + var(--safe-r));padding-left:calc(20px + var(--safe-l));}
+  body{background:#f3ebdd}
+  .navbar{padding:16px 24px 12px}
+
+  /* ---- 2) 类规则字号放大：7-14px → +3(封顶16) ---- */
+  .cal-opp,
+  .cal-score,
+  .bv-seed,
+  .bv-s-badge{font-size:10px}
+  .ba-slot .ba-owner,
+  .team-pick-card .tpc-name,
+  .bv-po-lbl,
+  .mc-alabel,
+  .player-state-impact{font-size:11px}
+  .legacy-media-kicker,
+  .legacy-media-source small,
+  .reveal-stat .label,
+  .wl-dot,
+  .sr-stat-lbl,
+  .mc-stat-lbl,
+  .dot-x,
+  .cs-stat-lbl,
+  .player-state-label,
+  .player-state-detail .player-state-label{font-size:12px}
+  .bl-label,
+  .ba-slot .ba-label,
+  .br-player .bp-detail,
+  .reveal-stat .num,
+  .sh-team-full,
+  .cal-standings-btn,
+  .cal-weekdays span,
+  .st-hdr,
+  .bv-s-btn,
+  .sr-grade,
+  .tp-grade,
+  .player-state-details>summary,
+  .player-state-group-title{font-size:13px}
+  .btn-xs,
+  .event-attribute-title,
+  .br-slot-actions .slot-btn,
+  .sh-info,
+  .gc-stats,
+  .gc-event,
+  .cal-rest .cal-date,
+  .cal-progress,
+  .st-streak,
+  .bv-header-sub,
+  .bv-s-team,
+  .bv-s-name,
+  .bv-s-score,
+  .sr-pct-line,
+  .mc-pct-line,
+  .mc-chip,
+  .awards-winner-label,
+  .awards-rank-label,
+  .award-team,
+  .tp-label,
+  .player-state-detail .player-state-value{font-size:14px}
+  .feature-card .fc-tag,
+  .fc-footer,
+  .br-slot-label,
+  .event-attribute-chip,
+  .event-attribute-empty,
+  .legacy-media-source,
+  .debug-btn button,
+  .sh-pct,
+  .gc-q,
+  .gc-total,
+  .gc-player-line,
+  .cal-date,
+  .bv-conf-tab,
+  .bv-po-title,
+  .eos-detail,
+  .sr-result,
+  .sr-info-row,
+  .mc-team-line,
+  .card-award,
+  .award-label,
+  .cs-season-record,
+  .cs-season-pts,
+  .cs-season-arrow,
+  .ch-season-header .ch-team{font-size:15px}
+  .ch-badge,
+  .tp-sub,
+  .tp-age-info,
+  .character-label,
+  .character-avatar-tab,
+  .character-error{font-size:15px}
+  .feature-card .fc-sub,
+  .btn-sm,
+  .ba-slot .ba-grade,
+  .ba-slot .ba-empty,
+  .br-slot-item,
+  .team-picker-close,
+  .br-player .bp-name,
+  .build-toast-msg,
+  .reveal-card .reveal-label,
+  .btn-conquest,
+  .btn-help,
+  .sh-season,
+  .gc-row,
+  .gc-result,
+  .cal-nav,
+  .modal-close,
+  .modal-tabs button,
+  .st-row,
+  .bv-round-arrow,
+  .champion-sub,
+  .sixty-win-sub,
+  .sr-section-title,
+  .mc-pos,
+  .mc-section-title{font-size:16px}
+  .mc-aval,
+  .awards-badge,
+  .awards-team-line,
+  .awards-team-sub,
+  .awards-flavor,
+  .award-winner,
+  .cs-season-num,
+  .cs-season-team,
+  .cs-detail-close,
+  .ch-season-header,
+  .ch-summary,
+  .ch-empty,
+  .tp-points-label,
+  .tp-section-title,
+  .tp-val,
+  .character-avatar.selected::after,
+  .player-state-value{font-size:16px}
+
+  /* ---- 3) 内联 style="font-size:.." 兜底（属性样式 > 样式表，需 !important）---- */
+  [style*="font-size:8px"]{font-size:11px!important}
+  [style*="font-size:9px"]{font-size:12px!important}
+  [style*="font-size:10px"]{font-size:13px!important}
+  [style*="font-size:11px"]{font-size:14px!important}
+  [style*="font-size:12px"]{font-size:15px!important}
+  [style*="font-size:13px"]{font-size:16px!important}
+  [style*="font-size:14px"]{font-size:16px!important}
+
+  /* ---- 4) 窄子容器放宽（仅因字号放大而过度换行处）---- */
+  .pos-grid{max-width:560px}
+  .eos-container{max-width:540px}
+  .character-card{max-width:560px}
+  .hero-desc{max-width:520px}
+  .champion-card{max-width:440px}
+  .sixty-win-card{max-width:440px}
+}

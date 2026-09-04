@@ -73,7 +73,7 @@
       "id": "break_99",
       "group": "build",
       "name": "属性突破 99",
-      "desc": "单项属性上限由 99 提升到 125",
+      "desc": "单项属性上限由 99 提升到 999",
       "default": false
     },
     {
@@ -87,7 +87,7 @@
       "id": "rich_points",
       "group": "build",
       "name": "训练点给满",
-      "desc": "每个休赛期直接获得 99 点训练预算",
+      "desc": "每个休赛期直接获得 999999 点训练预算",
       "default": false
     },
     {
