@@ -308,6 +308,20 @@
     { id: 'season_5', icon: '📅', name: '中生代', desc: '效力满 5 个赛季', rarity: 'common' },
     { id: 'season_10', icon: '🏛️', name: '一朝元老', desc: '效力满 10 个赛季', rarity: 'rare' },
     { id: 'retire', icon: '🎓', name: '功成身退', desc: '完成一段完整生涯并退役', rarity: 'epic' },
+    // — 现实 NBA 追加：荣誉 & 数据里程碑（2026-09-05） —
+    { id: 'all_rookie_team', icon: '🌱', name: '新锐之星', desc: '入选最佳新秀阵容', rarity: 'rare' },
+    { id: 'game_60', icon: '💥', name: '六十分盛宴', desc: '单场砍下 60+ 得分', rarity: 'epic' },
+    { id: 'game_70', icon: '🌋', name: '七十分神迹', desc: '单场砍下 70+ 得分', rarity: 'legend' },
+    { id: 'quadruple_double', icon: '🃏', name: '四双传奇', desc: '单场砍下四双（四项数据上双）', rarity: 'legend' },
+    { id: 'game_20_ast', icon: '🎩', name: '喂饼大师', desc: '单场送出 20+ 助攻', rarity: 'epic' },
+    { id: 'game_20_reb', icon: '🧱', name: '禁区巨兽', desc: '单场摘下 20+ 篮板', rarity: 'epic' },
+    { id: 'avg_10_ast', icon: '📡', name: '助攻机器', desc: '赛季场均 10+ 助攻', rarity: 'epic' },
+    { id: 'avg_12_reb', icon: '🛡️', name: '篮板王座', desc: '赛季场均 12+ 篮板', rarity: 'epic' },
+    { id: 'avg_35', icon: '🎯', name: '得分王', desc: '赛季场均 35+ 得分', rarity: 'epic' },
+    { id: 'career_20000', icon: '🏆', name: '两万分先生', desc: '生涯总得分突破 20000', rarity: 'rare' },
+    { id: 'career_30000', icon: '👑', name: '三万分先生', desc: '生涯总得分突破 30000', rarity: 'epic' },
+    { id: 'career_40000', icon: '🌟', name: '四万分传奇', desc: '生涯总得分突破 40000', rarity: 'legend' },
+    { id: 'career_50000', icon: '🐐', name: '五万分之神', desc: '生涯总得分突破 50000', rarity: 'legend' },
     // — 彩蛋 —
     { id: 'explorer', icon: '🧭', name: '成就猎人', desc: '解锁 10 个成就', rarity: 'rare' },
     { id: 'collector', icon: '🗂️', name: '收藏家', desc: '解锁 20 个成就', rarity: 'legend' }
@@ -924,21 +938,32 @@
     if (games < 40) return;
     var ppg = (Number(stats.pts) || 0) / games;
     var rpg = (Number(stats.reb) || 0) / games;
+    var apg = (Number(stats.ast) || 0) / games;
     if (ppg >= 30) PP_FX.unlock('avg_30');
+    if (ppg >= 35) PP_FX.unlock('avg_35');
     if (ppg >= 25 && rpg >= 10) PP_FX.unlock('season_25_10');
+    if (apg >= 10) PP_FX.unlock('avg_10_ast');
+    if (rpg >= 12) PP_FX.unlock('avg_12_reb');
   }
 
   function unlockGameStatMilestones(stats) {
     if (!stats) return;
     var points = Number(stats.pts) || 0;
+    var ast = Number(stats.ast) || 0;
+    var reb = Number(stats.reb) || 0;
     // 50+ also satisfies the stated 40+ condition.
     if (points >= 40) PP_FX.unlock('game_40');
     if (points >= 50) PP_FX.unlock('game_50');
+    if (points >= 60) PP_FX.unlock('game_60');
+    if (points >= 70) PP_FX.unlock('game_70');
+    if (ast >= 20) PP_FX.unlock('game_20_ast');
+    if (reb >= 20) PP_FX.unlock('game_20_reb');
     var doubleDigits = 0;
     ['pts', 'reb', 'ast', 'stl', 'blk'].forEach(function(k) {
       if ((Number(stats[k]) || 0) >= 10) doubleDigits++;
     });
     if (doubleDigits >= 3) PP_FX.unlock('triple_double');
+    if (doubleDigits >= 4) PP_FX.unlock('quadruple_double');
   }
 
   function syncStateMilestones(s) {
@@ -967,6 +992,12 @@
     if (played >= 5) PP_FX.unlock('season_5');
     if (played >= 10) PP_FX.unlock('season_10');
     if (career.retired) PP_FX.unlock('retire');
+
+    var totalPts = Number((career.totalStats && career.totalStats.pts)) || 0;
+    if (totalPts >= 20000) PP_FX.unlock('career_20000');
+    if (totalPts >= 30000) PP_FX.unlock('career_30000');
+    if (totalPts >= 40000) PP_FX.unlock('career_40000');
+    if (totalPts >= 50000) PP_FX.unlock('career_50000');
 
     archivedSeasons.forEach(function(season) {
       if ((Number(season && season.wins) || 0) >= 60) PP_FX.unlock('win_60');
@@ -1049,6 +1080,7 @@
     if (facts.mvp >= 3) PP_FX.unlock('mvp_x3', singleCareerEvidence(s, facts.mvp));
     if (facts.dpoy) unlockWithFactEvidence('dpoy', s, 'dpoy');
     if (facts.roty) unlockWithFactEvidence('roty', s, 'roty');
+    if (facts.allRookie) unlockWithFactEvidence('all_rookie_team', s, 'allRookie');
     if (facts.sixthman) unlockWithFactEvidence('sixth_man', s, 'sixthman');
     if (facts.allStar) unlockWithFactEvidence('all_star', s, 'allStar');
     if (facts.allNBA) unlockWithFactEvidence('all_nba', s, 'allNBA');

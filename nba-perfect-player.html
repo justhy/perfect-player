@@ -5640,6 +5640,59 @@ function calcSeasonAwards() {
       STATE.season.awards.push({ act:'sixthman', label:'最佳第六人', winner:bCN2, winnerEN:bestBench?.name || '', team:bestBTeam, isUser:false, userRank:userSixthRank });
     }
   })();
+  // ── 数据王（得分/篮板/助攻/抢断/盖帽/三分）：玩家真实场均 vs 全联盟估算 ──
+  (function() {
+    var _upg = {
+      pts: avg.pts, reb: avg.reb, ast: avg.ast, stl: avg.stl, blk: avg.blk,
+      three: g > 0 ? Math.round(((ps.threeM || 0) / g) * 10) / 10 : 0
+    };
+    var _mk = function(nm, tm, isU) { return { val: 0, name: nm, team: tm, isUser: isU }; };
+    var _leaders = {
+      pts: _mk(getHupuDisplayName(), STATE.careerTeam, true), reb: _mk(getHupuDisplayName(), STATE.careerTeam, true),
+      ast: _mk(getHupuDisplayName(), STATE.careerTeam, true), stl: _mk(getHupuDisplayName(), STATE.careerTeam, true),
+      blk: _mk(getHupuDisplayName(), STATE.careerTeam, true), three: _mk(getHupuDisplayName(), STATE.careerTeam, true)
+    };
+    ['pts', 'reb', 'ast', 'stl', 'blk', 'three'].forEach(function(k) { _leaders[k].val = _upg[k]; });
+    for (var _lt = 0; _lt < NBA2K_TEAMS.length; _lt++) {
+      var _lr = NBA2K_DATA[NBA2K_TEAMS[_lt]];
+      if (!_lr) continue;
+      for (var _lp2 = 0; _lp2 < _lr.length; _lp2++) {
+        var _p = _lr[_lp2];
+        var _ovr = parseInt(_p.ovr) || 50;
+        var _pos = ((_p.pos || 'SF').split('/')[0] || '').trim();
+        var _guard = _pos === 'PG' || _pos === 'SG';
+        var _big = _pos === 'C' || _pos === 'PF';
+        var _e = {
+          pts: _ovr * 0.38 - 4 + Math.random() * 4,
+          reb: _big ? _ovr * 0.16 + 2 : _ovr * 0.08 + 1,
+          ast: _guard ? _ovr * 0.13 + 2 : _ovr * 0.06 + 1,
+          stl: _guard ? _ovr * 0.035 + 0.3 : _ovr * 0.02 + 0.2,
+          blk: _big ? _ovr * 0.05 + 0.4 : _ovr * 0.02 + 0.1,
+          three: _guard ? _ovr * 0.045 + 0.5 : _ovr * 0.02 + 0.2
+        };
+        var _nm = _p.cname || _p.name, _tm = NBA2K_TEAMS[_lt];
+        ['pts', 'reb', 'ast', 'stl', 'blk', 'three'].forEach(function(k) {
+          if (_e[k] > _leaders[k].val) _leaders[k] = { val: _e[k], name: _nm, team: _tm, isUser: false };
+        });
+      }
+    }
+    var _titles = [
+      { key: 'pts', act: 'scoring_champ', label: '得分王' },
+      { key: 'reb', act: 'reb_champ', label: '篮板王' },
+      { key: 'ast', act: 'ast_champ', label: '助攻王' },
+      { key: 'stl', act: 'stl_champ', label: '抢断王' },
+      { key: 'blk', act: 'blk_champ', label: '盖帽王' },
+      { key: 'three', act: 'three_champ', label: '三分王' }
+    ];
+    for (var _ti = 0; _ti < _titles.length; _ti++) {
+      var _t = _titles[_ti], _L = _leaders[_t.key];
+      if (_L.isUser) {
+        STATE.season.awards.push({ act: _t.act, label: _t.label, winner: getHupuDisplayName(), winnerEN: '', team: STATE.careerTeam, isUser: true, userRank: '🥇 第一名' });
+      } else {
+        STATE.season.awards.push({ act: _t.act, label: _t.label, winner: _L.name, winnerEN: _L.name, team: _L.team, isUser: false, userRank: '未登顶' });
+      }
+    }
+  })();
   updateAwardStreaks();
   } catch(e) { STATE.season.awards = STATE.season.awards || []; }
 }
@@ -5667,8 +5720,8 @@ function showAwardsScreen() {
 
   setTimeout(function() {
   var seed = getConferenceSeed(STATE.careerTeam);
-  var emojiMap = { mvp:'🏆', dpoy:'🔒', mip:'📈', allStar:'⭐', allNBA:'🌟', allDefense:'🛡️', roty:'🌱', allRookie:'🌱', sixthman:'🔥' };
-  var catMap = { mvp:'最有价值球员', dpoy:'最佳防守球员', mip:'进步最快球员', allStar:'全明星', allNBA:'最佳阵容', allDefense:'最佳防守阵容', roty:'最佳新秀', allRookie:'最佳新秀阵容', sixthman:'最佳第六人' };
+  var emojiMap = { mvp:'🏆', dpoy:'🔒', mip:'📈', allStar:'⭐', allNBA:'🌟', allDefense:'🛡️', roty:'🌱', allRookie:'🌱', sixthman:'🔥', scoring_champ:'🏀', reb_champ:'🧱', ast_champ:'🎯', stl_champ:'🤲', blk_champ:'🚫', three_champ:'🏹' };
+  var catMap = { mvp:'最有价值球员', dpoy:'最佳防守球员', mip:'进步最快球员', allStar:'全明星', allNBA:'最佳阵容', allDefense:'最佳防守阵容', roty:'最佳新秀', allRookie:'最佳新秀阵容', sixthman:'最佳第六人', scoring_champ:'得分王', reb_champ:'篮板王', ast_champ:'助攻王', stl_champ:'抢断王', blk_champ:'盖帽王', three_champ:'三分王' };
 
   function getHs(enName) {
     if (!enName) return '';
@@ -5677,7 +5730,7 @@ function showAwardsScreen() {
   }
 
   var rowsHtml = '';
-  var order = ['mvp', 'dpoy', 'mip', 'allStar', 'roty', 'sixthman', 'allNBA', 'allDefense', 'allRookie'];
+  var order = ['mvp', 'dpoy', 'scoring_champ', 'reb_champ', 'ast_champ', 'stl_champ', 'blk_champ', 'three_champ', 'mip', 'allStar', 'roty', 'sixthman', 'allNBA', 'allDefense', 'allRookie'];
   var isFirstAwardSeason = !STATE.career || STATE.career.seasonCount === 0;
   var rowsRendered = 0;
   for (var oi = 0; oi < order.length; oi++) {
@@ -6417,7 +6470,7 @@ function interpolateShotCurve(attrVal, anchors) {
   }
   var _last = anchors[anchors.length - 1];
   if (value > _last[0] && anchors.length >= 2) {
-    // 金手指 break_99：属性 >99 后沿末两锚点斜率线性外推，命中率继续提升（封顶 0.98）
+    // 专属特权 break_99：属性 >99 后沿末两锚点斜率线性外推，命中率继续提升（封顶 0.98）
     var _prev = anchors[anchors.length - 2];
     var _slope = (_last[1] - _prev[1]) / Math.max(1, _last[0] - _prev[0]);
     return Math.min(0.98, _last[1] + _slope * (value - _last[0]));
@@ -9159,6 +9212,12 @@ function renderMyCard(isFinal) {
     else if (l.indexOf('全明星') >= 0) emoji = '⭐';
     else if (l.indexOf('最佳阵容') >= 0) emoji = '🌟';
     else if (l.indexOf('最佳新秀') >= 0) emoji = '🌱';
+    else if (l.indexOf('得分王') >= 0) emoji = '🏀';
+    else if (l.indexOf('篮板王') >= 0) emoji = '🧱';
+    else if (l.indexOf('助攻王') >= 0) emoji = '🎯';
+    else if (l.indexOf('抢断王') >= 0) emoji = '🤲';
+    else if (l.indexOf('盖帽王') >= 0) emoji = '🚫';
+    else if (l.indexOf('三分王') >= 0) emoji = '🏹';
     var cls = 'ch-badge';
     if (l.indexOf('总冠军') >= 0 || l.indexOf('MVP') >= 0 || l.indexOf('FMVP') >= 0) cls += ' gold';
     awardsHtml += renderHonorBadge(l, emoji, cls);
@@ -9478,6 +9537,12 @@ function saveCurrentSeasonToCareer() {
       else if (l.indexOf('全明星') >= 0) emoji = '⭐';
       else if (l.indexOf('最佳阵容') >= 0) emoji = '🌟';
       else if (l.indexOf('最佳新秀') >= 0) emoji = '🌱';
+      else if (l.indexOf('得分王') >= 0) emoji = '🏀';
+      else if (l.indexOf('篮板王') >= 0) emoji = '🧱';
+      else if (l.indexOf('助攻王') >= 0) emoji = '🎯';
+      else if (l.indexOf('抢断王') >= 0) emoji = '🤲';
+      else if (l.indexOf('盖帽王') >= 0) emoji = '🚫';
+      else if (l.indexOf('三分王') >= 0) emoji = '🏹';
       honorList.push({ seasonNum: c.seasonCount + 1, label: l, emoji: emoji });
     } else if (a.isUser) {
       // 结构化奖项：只取 isUser 为 true 的
@@ -9492,6 +9557,12 @@ function saveCurrentSeasonToCareer() {
       else if (l.indexOf('全明星') >= 0) emoji = '⭐';
       else if (l.indexOf('最佳阵容') >= 0) emoji = '🌟';
       else if (l.indexOf('最佳新秀') >= 0) emoji = '🌱';
+      else if (l.indexOf('得分王') >= 0) emoji = '🏀';
+      else if (l.indexOf('篮板王') >= 0) emoji = '🧱';
+      else if (l.indexOf('助攻王') >= 0) emoji = '🎯';
+      else if (l.indexOf('抢断王') >= 0) emoji = '🤲';
+      else if (l.indexOf('盖帽王') >= 0) emoji = '🚫';
+      else if (l.indexOf('三分王') >= 0) emoji = '🏹';
       honorList.push({ seasonNum: c.seasonCount + 1, label: l, emoji: emoji });
     }
   });
@@ -15930,7 +16001,7 @@ function renderTrainingAttrs(tp) {
   var pending = STATE._tpPending || {};
   var attrsEl = document.getElementById('tp-attrs');
   if (!attrsEl) return;
-  // 金手指解锁后：+ 号支持按住连点（普通玩家仅单击）。
+  // 专属特权解锁后：+ 号支持按住连点（普通玩家仅单击）。
   // 委托在 #tp-attrs 上——addTrainingPoint 每次重渲染 innerHTML 会替换按钮本身。
   // 用 mouse+touch 双路径而非 Pointer Events：触屏长按会被浏览器手势接管（pointercancel），
   // pointerdown 方案会静默失效；touchstart preventDefault（非 passive）阻断接管。
@@ -15946,14 +16017,17 @@ function renderTrainingAttrs(tp) {
       var held = false, swallow = null;
       var noCtx = function (ev) { ev.preventDefault(); };
       var timer = setTimeout(function () {
-        // 按住 350ms 后进入连点：每 80ms 加一点
+        // 按住 150ms 后进入连点：每 50ms 批量 +15（约 300 点/秒，渲染 20 次/秒）
         held = true;
         document.body.style.userSelect = 'none';
         document.addEventListener('contextmenu', noCtx);
         swallow = function (ev) { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', swallow); }; // 吞一次即自摘
         document.addEventListener('click', swallow, true);
-        timer = setInterval(function () { addTrainingPoint(key); }, 80);
-      }, 350);
+        timer = setInterval(function () {
+          for (var _i = 0; _i < 15; _i++) { if (!applyTrainingPoint(key)) break; } // 每 tick +15
+          renderTrainingCamp(); // 每 tick 只渲染一次
+        }, 50);
+      }, 150);
       var stop = function () {
         document.removeEventListener('mouseup', stop);
         clearTimeout(timer); clearInterval(timer);
@@ -15981,8 +16055,11 @@ function renderTrainingAttrs(tp) {
         document.addEventListener('contextmenu', noCtx);
         swallow = function (ev) { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', swallow); }; // 吞一次即自摘
         document.addEventListener('click', swallow, true);
-        timer = setInterval(function () { addTrainingPoint(key); }, 80);
-      }, 350);
+        timer = setInterval(function () {
+          for (var _i = 0; _i < 15; _i++) { if (!applyTrainingPoint(key)) break; } // 每 tick +15
+          renderTrainingCamp(); // 每 tick 只渲染一次
+        }, 50);
+      }, 150);
       var stop = function () {
         document.removeEventListener('touchend', stop);
         document.removeEventListener('touchcancel', stop);
@@ -16073,19 +16150,23 @@ function getMaxAdd(alreadyAdded, totalPoints, curVal) {
   return possible;
 }
 
-function addTrainingPoint(key) {
+function applyTrainingPoint(key) {
   if (!STATE._tpPending) STATE._tpPending = {};
   var added = STATE._tpPending[key] || 0;
   var cur = STATE.attrs[key] || 50;
-  if (added >= 8 && !(window.PP_GOD && window.PP_GOD.isOn('no_train_cap'))) return;
+  if (added >= 8 && !(window.PP_GOD && window.PP_GOD.isOn('no_train_cap'))) return false;
   var tp = calcTrainingPoints();
   var used = getPendingTrainingCost(STATE._tpPending);
   var remaining = tp - used;
   var cost = getPointCost(cur + added);
   var _addCap = (window.PP_GOD && window.PP_GOD.isOn('break_99')) ? 999 : 99;
-  if (remaining < cost || cur + added >= _addCap) return;
+  if (remaining < cost || cur + added >= _addCap) return false;
   STATE._tpPending[key] = (STATE._tpPending[key] || 0) + 1;
-  renderTrainingCamp();
+  return true;
+}
+
+function addTrainingPoint(key) {
+  if (applyTrainingPoint(key)) renderTrainingCamp();
 }
 
 function resetTraining() {
