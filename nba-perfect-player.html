@@ -5196,7 +5196,7 @@ function updateAwardStreaks() {
   var seasonKey = c && c.seasonCount;
   if (!seasonKey || STATE._awardStreakSeason === seasonKey) return;
   STATE._awardStreakSeason = seasonKey;
-  var acts = ['mvp', 'dpoy', 'sixthman'];
+  var acts = ['mvp', 'dpoy', 'sixthman', 'mip'];
   var userObj = getUserPlayerObject();
   var winnerByAct = {};
   (STATE.season.awards || []).forEach(function(a) {
@@ -5692,6 +5692,167 @@ function calcSeasonAwards() {
         STATE.season.awards.push({ act: _t.act, label: _t.label, winner: _L.name, winnerEN: _L.name, team: _L.team, isUser: false, userRank: '未登顶' });
       }
     }
+  })();
+  // ── 进步最快球员（MIP）：玩家真实跨赛季进步 vs 全联盟建模进步 ──
+  (function() {
+    var prevSeason = (STATE.career && STATE.career.seasons && STATE.career.seasons.length)
+      ? STATE.career.seasons[STATE.career.seasons.length - 1] : null;
+    var hasBaseline = !!(prevSeason && prevSeason.playerStats && prevSeason.playerStats.games);
+
+    var userImpScore = 0, userEligible = false, userMipRank = '生涯首季无对比';
+    if (g < 50) {
+      userMipRank = '出勤不足';
+    } else if (!hasBaseline) {
+      userMipRank = '生涯首季无对比';
+    } else {
+      var pps = prevSeason.playerStats, pg = pps.games || 1;
+      var bAvg = {
+        pts: (pps.pts || 0) / pg, reb: (pps.reb || 0) / pg, ast: (pps.ast || 0) / pg,
+        stl: (pps.stl || 0) / pg, blk: (pps.blk || 0) / pg
+      };
+      var bOvr = parseInt(prevSeason.ovr) || 50;
+      var dOvr = Math.max(0, (parseInt(STATE.finalOVR) || 0) - bOvr);
+      var dPts = Math.max(0, avg.pts - bAvg.pts);
+      var dReb = Math.max(0, avg.reb - bAvg.reb);
+      var dAst = Math.max(0, avg.ast - bAvg.ast);
+      var dStl = Math.max(0, avg.stl - bAvg.stl);
+      var dBlk = Math.max(0, avg.blk - bAvg.blk);
+      userImpScore = dOvr * 1.2 + (dPts * 0.4 + dReb * 0.4 + dAst * 0.4 + (dStl + dBlk) * 0.5);
+      userEligible = dOvr >= 1.5 && bOvr < 90;
+      if (!userEligible) {
+        userImpScore = 0;
+        userMipRank = bOvr >= 90 ? '已成名球员不参评' : '进步幅度不足';
+      } else {
+        userMipRank = '进入评选';
+      }
+    }
+
+    var leagueBest = null, leagueBestScore = -1;
+    for (var _mt2 = 0; _mt2 < NBA2K_TEAMS.length; _mt2++) {
+      var _r3 = NBA2K_DATA[NBA2K_TEAMS[_mt2]];
+      if (!_r3) continue;
+      for (var _p3 = 0; _p3 < _r3.length; _p3++) {
+        var p3 = _r3[_p3];
+        if (p3._isUser) continue;
+        if (getPlayerAwardStreak(p3, 'mip') >= 2) continue;
+        var age3 = getLeaguePlayerAge(p3);
+        var mDOvr, mPts, mReb, mAst, mStl, mBlk;
+        if (age3 >= 21 && age3 <= 24) {
+          mDOvr = 3 + (24 - age3) * 0.3 + Math.random() * 1.5;
+          mPts = mDOvr * 0.9 + 0.5; mReb = mDOvr * 0.4; mAst = mDOvr * 0.45;
+          mStl = 0.4 + Math.random() * 0.5; mBlk = 0.3 + Math.random() * 0.6;
+        } else if (age3 < 21) {
+          mDOvr = 1.5 + Math.random(); mPts = mDOvr * 0.7; mReb = mDOvr * 0.35;
+          mAst = mDOvr * 0.4; mStl = 0.3 + Math.random() * 0.4; mBlk = 0.2 + Math.random() * 0.4;
+        } else if (age3 <= 28) {
+          mDOvr = 1.5 + Math.random() * 1.2; mPts = mDOvr * 0.8; mReb = mDOvr * 0.35;
+          mAst = mDOvr * 0.4; mStl = 0.3 + Math.random() * 0.4; mBlk = 0.2 + Math.random() * 0.5;
+        } else {
+          mDOvr = Math.random() * 0.8; mPts = mDOvr * 0.7; mReb = mDOvr * 0.3;
+          mAst = mDOvr * 0.3; mStl = Math.random() * 0.3; mBlk = Math.random() * 0.4;
+        }
+        var ls = mDOvr * 1.2 + (mPts * 0.4 + mReb * 0.4 + mAst * 0.4 + (mStl + mBlk) * 0.5);
+        var starStart3 = getMvpStarAllNbaStart(p3);
+        if (starStart3 != null && seasonYear >= starStart3 && seasonYear <= starStart3 + 3) ls += 4;
+        if (age3 >= 34) ls -= 3;
+        if (ls > leagueBestScore) {
+          leagueBestScore = ls;
+          leagueBest = { name: p3.cname || p3.name, playerName: p3.name || '', team: NBA2K_TEAMS[_mt2] };
+        }
+      }
+    }
+    if (!leagueBest) leagueBest = lp('Cade Cunningham') || { name: '凯德-坎宁安', playerName: 'Cade Cunningham', team: 'DET' };
+
+    if (userEligible && userImpScore >= leagueBestScore) {
+      STATE.season.awards.push({ act:'mip', label:'进步最快球员', winner:getHupuDisplayName(), winnerEN:'', team:STATE.careerTeam, isUser:true, userRank:'🥇 第一名' });
+    } else {
+      if (userEligible) {
+        if (userImpScore >= leagueBestScore * 0.85) userMipRank = '🥈 第二名';
+        else if (userImpScore >= leagueBestScore * 0.7) userMipRank = '🥉 第三名';
+        else if (userImpScore >= leagueBestScore * 0.5) userMipRank = '第四名';
+        else userMipRank = '未进入前五';
+      }
+      if (userMipRank !== '生涯首季无对比' && userMipRank !== '出勤不足'
+          && userMipRank !== '已成名球员不参评' && userMipRank !== '进步幅度不足'
+          && getUserRankStreak('mip', userMipRank) >= 2) {
+        userMipRank = '未进入前五';
+      }
+      STATE.season.awards.push({ act:'mip', label:'进步最快球员', winner:leagueBest.name, winnerEN:leagueBest.playerName || '', team:leagueBest.team || '', isUser:false, userRank:userMipRank });
+    }
+  })();
+  // ── 最佳防守阵容（一阵 5 人）：防守属性 + 抢断盖帽产量，玩家/联盟量纲统一 ──
+  (function() {
+    function defScore(a, stl, blk) {
+      var PDEF = parseInt(a.PDEF) || 50, IDEF = parseInt(a.IDEF) || 50,
+          BLK  = parseInt(a.BLK)  || 50, ovr  = parseInt(a.ovr)  || 50;
+      return PDEF * 0.4 + IDEF * 0.4 + BLK * 0.8 + ovr * 0.25 + ((stl || 0) + (blk || 0)) * 6;
+    }
+    var candidates = [];
+    for (var _dt2 = 0; _dt2 < NBA2K_TEAMS.length; _dt2++) {
+      var _r4 = NBA2K_DATA[NBA2K_TEAMS[_dt2]];
+      if (!_r4) continue;
+      for (var _p4 = 0; _p4 < _r4.length; _p4++) {
+        var p4 = _r4[_p4];
+        if (p4._isUser) continue;
+        var est4 = estimatePlayerStats(p4);
+        candidates.push({
+          name: p4.cname || p4.name, playerName: p4.name || '', team: NBA2K_TEAMS[_dt2],
+          pos: (p4.pos || 'SF').split('/')[0].trim(),
+          score: defScore(p4, est4.stl, est4.blk), isUser: false
+        });
+      }
+    }
+    var _uAttr = STATE.attrs || {};
+    var userDefCand = {
+      name: getHupuDisplayName(), playerName: '', team: STATE.careerTeam, pos: STATE.position,
+      score: defScore({ PDEF: _uAttr.PDEF, IDEF: _uAttr.IDEF, BLK: _uAttr.BLK, ovr: STATE.finalOVR }, avg.stl, avg.blk),
+      isUser: true
+    };
+    candidates.push(userDefCand);
+    candidates.sort(function(a, b) { return b.score - a.score; });
+
+    var selected = [];
+    for (var _pi5 = 0; _pi5 < candidates.length && selected.length < 5; _pi5++) {
+      var c5 = candidates[_pi5];
+      if (selected.some(function(x) { return x.pos === c5.pos; })) continue;
+      selected.push(c5);
+    }
+    for (var _pi6 = 0; _pi6 < candidates.length && selected.length < 5; _pi6++) {
+      var c6 = candidates[_pi6];
+      if (selected.indexOf(c6) >= 0) continue;
+      selected.push(c6);
+    }
+    selected = selected.slice(0, 5);
+
+    // DPOY 得主锁定一阵（同最佳阵容强制 MVP 入阵的逻辑）
+    var defForce = [];
+    if (dpoyWin && !selected.some(function(x) { return x.isUser; })) {
+      defForce.push(userDefCand);
+    } else if (!dpoyWin && dpoyPick && dpoyPick.playerName) {
+      for (var _df = 0; _df < candidates.length; _df++) {
+        if (candidates[_df].playerName === dpoyPick.playerName) { defForce.push(candidates[_df]); break; }
+      }
+    }
+    defForce.forEach(function(fc) {
+      if (selected.some(function(x) { return x.name === fc.name; })) return;
+      if (selected.length < 5) { selected.push(fc); return; }
+      var low = -1, lowS = Infinity;
+      for (var _sl = 0; _sl < selected.length; _sl++) {
+        if (selected[_sl].isUser) continue;
+        if (selected[_sl].score < lowS) { lowS = selected[_sl].score; low = _sl; }
+      }
+      if (low >= 0) selected[low] = fc;
+    });
+
+    var userInDef = selected.some(function(x) { return x.isUser; });
+    STATE.season.awards.push({
+      act:'allDefense', label:'最佳防守阵容',
+      winner: selected.map(function(x) { return x.name; }).join('、'),
+      winnerEN: selected.map(function(x) { return x.playerName || ''; }).join(','),
+      team:'', isUser:userInDef,
+      userRank: userInDef ? '🥇 入选最佳防守阵容' : '未入选',
+      isList:true
+    });
   })();
   updateAwardStreaks();
   } catch(e) { STATE.season.awards = STATE.season.awards || []; }
