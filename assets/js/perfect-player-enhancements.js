@@ -33,47 +33,100 @@
 '.pp-ach-panel-overlay{position:fixed;inset:0;z-index:9100;display:flex;align-items:flex-end;justify-content:center;',
 '  background:rgba(20,12,4,.55);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s ease}',
 '.pp-ach-panel-overlay.show{opacity:1}',
-'.pp-ach-panel{width:min(560px,100%);max-height:86vh;display:flex;flex-direction:column;',
+// 固定高度：成就数量变化不再改变弹窗高度，避免每次开面板尺寸跳动。
+// 高度预算（640px）：头部 ~52 + 进度条 ~41 = 93，正文区剩 547；
+// 左侧 10 个单列标签按每项 46px + 9 个 5px 间距 = 505，可完整显示且仍有余量。
+'.pp-ach-panel{width:min(700px,100%);height:min(640px,84vh);display:flex;flex-direction:column;',
 '  background:var(--bg,#faf5eb);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.3);',
 '  transform:translateY(100%);transition:transform .36s cubic-bezier(.16,.9,.3,1);padding-bottom:env(safe-area-inset-bottom,0px)}',
 '.pp-ach-panel-overlay.show .pp-ach-panel{transform:translateY(0)}',
-'.pp-ach-panel-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px}',
+// —— 左右分栏：左侧单列分类标签（10 个分类一次全显示）+ 右侧该分类内容 ——
+// flex 收缩规则：头部/进度条为 flex:0 不压缩，正文区吃掉剩余高度。
+'.pp-ach-panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 8px;flex:0 0 auto}',
 '.pp-ach-panel-title{font-family:var(--font-display,sans-serif);font-size:20px;font-weight:800;color:#2d1f0e}',
 '.pp-ach-close{width:32px;height:32px;border-radius:50%;border:none;background:rgba(45,31,14,.08);',
 '  color:#2d1f0e;font-size:15px;cursor:pointer;transition:transform .12s}.pp-ach-close:active{transform:scale(.88)}',
-'.pp-ach-progress{padding:0 18px 12px}',
+'.pp-ach-progress{padding:0 18px 10px;flex:0 0 auto}',
 '.pp-ach-progress-bar{height:9px;border-radius:6px;background:rgba(45,31,14,.1);overflow:hidden}',
 '.pp-ach-progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#ff6b35,#f7a600);',
 '  transition:width .6s cubic-bezier(.2,.8,.3,1)}',
 '.pp-ach-progress-txt{margin-top:6px;font-size:12px;color:#8a7a66;font-weight:600;font-family:var(--font-display,sans-serif)}',
-'.pp-ach-grid{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px 18px;display:flex;flex-direction:column;gap:8px}',
-'.pp-ach-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;',
+// 全局隐藏滚动条：面板高度固定且内容按最高分类排布，不再出现任何滚动条。
+'.pp-ach-panel *{scrollbar-width:none;-ms-overflow-style:none}',
+'.pp-ach-panel *::-webkit-scrollbar{width:0;height:0;display:none}',
+'.pp-ach-body{flex:1;min-height:0;display:flex;gap:0;align-items:stretch;overflow:hidden}',
+// 左侧标签：单列，每个标签「图标 + 名称 + 进度」横向一行，字号放大保证可读。
+// 高度预算：10 项 × 35px + 9 × 8px 间距 + 上下内边距 ≈ 433px < 正文区 542px，无需滚动。
+// 宽度 156px：名称区实测可得 ~75px，容得下最长分类名「个人荣誉」（4 汉字 ≈ 56px）。
+'.pp-ach-tabs{flex:0 0 156px;max-width:156px;padding:2px 6px 10px 10px;',
+'  display:flex;flex-direction:column;gap:8px;align-content:start;',
+'  border-right:1.5px solid var(--border,#f0e0cc);overflow:hidden}',
+'.pp-ach-tab{position:relative;width:100%;border:none;background:transparent;cursor:pointer;',
+'  display:flex;flex-direction:row;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;',
+'  font-family:var(--font-display,sans-serif);transition:background .16s,transform .12s}',
+'.pp-ach-tab:active{transform:scale(.96)}',
+'.pp-ach-tab-ic{flex:0 0 auto;width:22px;text-align:center;font-size:17px;line-height:1;',
+'  filter:grayscale(.55) opacity(.7);transition:filter .16s}',
+'.pp-ach-tab-nm{flex:1;min-width:0;text-align:left;font-size:14px;font-weight:800;color:#5f4f3c;',
+'  letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .16s}',
+'.pp-ach-tab-nt{flex:0 0 auto;font-size:12px;font-weight:700;color:#9d8d74;letter-spacing:-.2px}',
+'.pp-ach-tab.done .pp-ach-tab-ic{filter:none}',
+'.pp-ach-tab.active{background:linear-gradient(135deg,rgba(255,107,53,.14),rgba(247,166,0,.14))}',
+'.pp-ach-tab.active .pp-ach-tab-nm{color:#ff6b35}',
+'.pp-ach-tab.active .pp-ach-tab-ic{filter:none}',
+'.pp-ach-tab.active .pp-ach-tab-nt{color:#e08a2e}',
+'.pp-ach-tab.active::before{content:"";position:absolute;left:-10px;top:50%;transform:translateY(-50%);',
+'  width:4px;height:24px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,#ff6b35,#f7a600)}',
+'.pp-ach-tab-full{position:absolute;left:3px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;',
+'  background:linear-gradient(135deg,#ff6b35,#f7a600)}',
+// 右侧内容：同样不滚动，最大分类（11 项）以两列卡片完整放下。
+'.pp-ach-content{flex:1;min-width:0;padding:8px 14px 14px;display:flex;flex-direction:column;gap:8px;overflow:hidden}',
+'.pp-ach-cat-head{display:flex;align-items:baseline;justify-content:space-between;padding:2px 2px 0;flex:0 0 auto}',
+'.pp-ach-cat-title{font-family:var(--font-display,sans-serif);font-size:13.5px;font-weight:800;color:#2d1f0e;letter-spacing:.2px}',
+'.pp-ach-cat-num{font-size:11.5px;font-weight:700;color:#a8977f;font-family:var(--font-display,sans-serif)}',
+'.pp-ach-cat-bar{height:4px;border-radius:3px;background:rgba(45,31,14,.09);overflow:hidden;margin:0 2px;flex:0 0 auto}',
+'.pp-ach-cat-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#ff6b35,#f7a600);',
+'  transition:width .6s cubic-bezier(.2,.8,.3,1)}',
+'.pp-ach-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-content:start}',
+'.pp-ach-item{position:relative;display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:13px;',
 '  background:var(--bg-card,#fffaf2);border:1.5px solid var(--border,#f0e0cc);transition:transform .12s}',
 '.pp-ach-item.locked{opacity:.62;filter:grayscale(.4)}',
 '.pp-ach-item.got.rarity-legend{border-color:var(--gold,#f7a600);background:linear-gradient(120deg,#fffaf2,#fff3d9)}',
 '.pp-ach-item.got.rarity-epic{border-color:#c9b8f0}.pp-ach-item.got.rarity-rare{border-color:#9fe0d6}',
-'.pp-ach-badge{position:relative;width:46px;height:46px;flex:0 0 46px}',
+'.pp-ach-badge{position:relative;width:42px;height:42px;flex:0 0 42px}',
 '.pp-ach-badge-ring{position:absolute;inset:0}',
-'.pp-ach-badge-ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:21px}',
+'.pp-ach-badge-ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px}',
 '.pp-ach-item.got .pp-ach-badge-ring .pp-ring-arc{animation:ppRingSpin 4s linear infinite;transform-origin:50% 50%}',
-'.pp-ach-meta{flex:1;min-width:0}',
-'.pp-ach-name{font-family:var(--font-display,sans-serif);font-size:14.5px;font-weight:800;color:#2d1f0e;',
-'  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-'.pp-ach-desc{font-size:11.5px;color:#8a7a66;line-height:1.35;margin-top:1px}',
-'.pp-ach-rarity{font-size:10px;font-weight:800;font-family:var(--font-display,sans-serif);padding:3px 8px;border-radius:20px;',
-'  background:rgba(45,31,14,.06);color:#8a7a66;flex:0 0 auto}',
+'.pp-ach-meta{flex:1;min-width:0;padding-right:46px}',
+'.pp-ach-name{font-family:var(--font-display,sans-serif);font-size:13.5px;font-weight:800;color:#2d1f0e;',
+'  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}',
+'.pp-ach-desc{font-size:11px;color:#8a7a66;line-height:1.32;margin-top:1px;',
+'  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+'.pp-ach-rarity{position:absolute;right:9px;top:8px;font-size:9.5px;font-weight:800;font-family:var(--font-display,sans-serif);',
+'  padding:2px 7px;border-radius:20px;background:rgba(45,31,14,.06);color:#8a7a66;flex:0 0 auto}',
 '.pp-ach-item.got.rarity-legend .pp-ach-rarity{background:rgba(247,166,0,.16);color:#c48a00}',
 '.pp-ach-item.got.rarity-epic .pp-ach-rarity{background:rgba(183,164,232,.2);color:#7d5fd0}',
 '.pp-ach-item.got.rarity-rare .pp-ach-rarity{background:rgba(46,196,182,.16);color:#1f9e91}',
+// 窄屏：标签栏与卡片同步收窄，但保持单列 + 可读字号。
+'@media(max-width:460px){.pp-ach-tabs{flex:0 0 134px;max-width:134px;padding-left:6px;gap:5px}',
+'  .pp-ach-tab{padding:6px 7px;gap:6px}.pp-ach-tab-nm{font-size:12.5px}',
+'  .pp-ach-tab-ic{font-size:15px;width:19px}.pp-ach-tab-nt{font-size:11px}',
+'  .pp-ach-item{padding:7px}.pp-ach-badge{width:34px;height:34px;flex:0 0 34px}.pp-ach-badge-ic{font-size:16px}}',
+// 极窄屏：右侧卡片改单列，避免文字被挤掉。
+'@media(max-width:360px){.pp-ach-grid{grid-template-columns:1fr}',
+'  .pp-ach-tabs{flex:0 0 104px;max-width:104px}}',
 '@media(prefers-reduced-motion:reduce){.pp-ring-arc,.pp-ach-fab::after{animation:none!important}}',
 // —— 传承祭坛 ——
 '.pp-lg-open-btn{border:none;cursor:pointer;background:linear-gradient(135deg,#b7a4e8,#ff6b35);color:#fff;',
 '  font-family:var(--font-display,sans-serif);font-weight:700;font-size:12px;padding:7px 12px;border-radius:20px;',
 '  box-shadow:0 3px 10px rgba(183,164,232,.35)}.pp-lg-open-btn:active{transform:scale(.94)}',
-'.pp-lg-lp{padding:2px 18px 4px;font-size:13px;color:#8a7a66;font-family:var(--font-display,sans-serif)}',
+'.pp-lg-lp{padding:2px 18px 4px;font-size:13px;color:#8a7a66;font-family:var(--font-display,sans-serif);flex:0 0 auto}',
 '.pp-lg-lp b{color:var(--orange,#ff6b35);font-size:17px}',
-'.pp-lg-hint{padding:0 18px 10px;font-size:11.5px;color:#9a8a76;line-height:1.5}',
-'.pp-lg-grid{gap:10px}',
+'.pp-lg-hint{padding:0 18px 10px;font-size:11.5px;color:#9a8a76;line-height:1.5;flex:0 0 auto}',
+// 强化列表吃掉剩余高度（弹窗高度恒定，条目少时不会溢出），并隐藏滚动条。
+'.pp-lg-grid{gap:9px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px 18px 0}',
+'.pp-lg-grid *{scrollbar-width:none;-ms-overflow-style:none}',
+'.pp-lg-grid *::-webkit-scrollbar{width:0;height:0;display:none}',
 '.pp-lg-perk{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:14px;background:var(--bg-card,#fffaf2);',
 '  border:1.5px solid var(--border,#f0e0cc)}',
 '.pp-lg-perk.maxed{border-color:#c9b8f0;background:linear-gradient(120deg,#fffaf2,#f4eeff)}',
@@ -90,7 +143,7 @@
 '  font-family:var(--font-display,sans-serif);font-size:13px;padding:9px 12px;border-radius:11px;min-width:56px;',
 '  box-shadow:0 3px 0 #c94d1e}.pp-lg-buy:active{transform:translateY(2px);box-shadow:0 1px 0 #c94d1e}',
 '.pp-lg-buy:disabled{opacity:.4;box-shadow:none;cursor:not-allowed}',
-'.pp-lg-foot{padding:10px 18px 18px}',
+'.pp-lg-foot{padding:10px 18px 18px;flex:0 0 auto}',
 '.pp-lg-respec{width:100%;border:1.5px dashed var(--border,#f0e0cc);background:transparent;color:#8a7a66;',
 '  font-size:12px;padding:9px;border-radius:11px;cursor:pointer}.pp-lg-respec:active{transform:scale(.98)}',
 ''
@@ -275,62 +328,109 @@
   // 稀有度只影响解锁弹窗与徽章配色。
   var ACHIEVEMENTS = [
     // — 起步 —
-    { id: 'create_player', icon: '🏀', name: '梦开始的地方', desc: '创建你的第一位球员', rarity: 'common' },
-    { id: 'ovr_80', icon: '📈', name: '天赋兑现', desc: '揭晓时综合能力达到 80', rarity: 'rare' },
-    { id: 'ovr_90', icon: '💎', name: '天选之子', desc: '揭晓时综合能力达到 90', rarity: 'epic' },
-    { id: 'ovr_95', icon: '👑', name: '降维打击', desc: '揭晓时综合能力达到 95', rarity: 'legend' },
+    { id: 'create_player', icon: '🏀', name: '梦开始的地方', desc: '创建你的第一位球员', rarity: 'common', cat: 'start' },
+    { id: 'ovr_80', icon: '📈', name: '天赋兑现', desc: '揭晓时综合能力达到 80', rarity: 'rare', cat: 'start' },
+    { id: 'ovr_90', icon: '💎', name: '天选之子', desc: '揭晓时综合能力达到 90', rarity: 'epic', cat: 'start' },
+    { id: 'ovr_95', icon: '👑', name: '降维打击', desc: '揭晓时综合能力达到 95', rarity: 'legend', cat: 'start' },
     // — 选秀 —
-    { id: 'lottery_pick', icon: '🎯', name: '乐透秀', desc: '在选秀乐透区(前14顺位)被选中', rarity: 'rare' },
-    { id: 'first_pick', icon: '🥇', name: '状元登基', desc: '成为选秀状元(第1顺位)', rarity: 'epic' },
-    { id: 'undrafted', icon: '🔥', name: '落选逆袭', desc: '落选后依然踏上 NBA 赛场', rarity: 'rare' },
+    { id: 'lottery_pick', icon: '🎯', name: '乐透秀', desc: '在选秀乐透区(前14顺位)被选中', rarity: 'rare', cat: 'draft' },
+    { id: 'first_pick', icon: '🥇', name: '状元登基', desc: '成为选秀状元(第1顺位)', rarity: 'epic', cat: 'draft' },
+    { id: 'undrafted', icon: '🔥', name: '落选逆袭', desc: '落选后依然踏上 NBA 赛场', rarity: 'rare', cat: 'draft' },
     // — 个人荣誉 —
-    { id: 'all_star', icon: '⭐', name: '全明星首秀', desc: '首次入选全明星', rarity: 'rare' },
-    { id: 'all_nba', icon: '🌟', name: '最佳阵容', desc: '入选一届最佳阵容', rarity: 'epic' },
-    { id: 'roty', icon: '🌱', name: '年度最佳新秀', desc: '拿下最佳新秀', rarity: 'epic' },
-    { id: 'dpoy', icon: '🔒', name: '防守中枢', desc: '当选最佳防守球员', rarity: 'epic' },
-    { id: 'sixth_man', icon: '🛋️', name: '超级第六人', desc: '当选最佳第六人', rarity: 'rare' },
-    { id: 'mvp', icon: '🏆', name: '联盟 MVP', desc: '荣膺常规赛最有价值球员', rarity: 'legend' },
-    { id: 'fmvp', icon: '👑', name: '总决赛 MVP', desc: '荣膺总决赛最有价值球员', rarity: 'legend' },
-    { id: 'mvp_x3', icon: '🐐', name: 'MVP 王朝', desc: '同一生涯累计 3 座常规赛 MVP', rarity: 'legend' },
+    { id: 'all_star', icon: '⭐', name: '全明星首秀', desc: '首次入选全明星', rarity: 'rare', cat: 'honor' },
+    { id: 'all_nba', icon: '🌟', name: '最佳阵容', desc: '入选一届最佳阵容', rarity: 'epic', cat: 'honor' },
+    { id: 'roty', icon: '🌱', name: '年度最佳新秀', desc: '拿下最佳新秀', rarity: 'epic', cat: 'honor' },
+    { id: 'dpoy', icon: '🔒', name: '防守中枢', desc: '当选最佳防守球员', rarity: 'epic', cat: 'honor' },
+    { id: 'sixth_man', icon: '🛋️', name: '超级第六人', desc: '当选最佳第六人', rarity: 'rare', cat: 'honor' },
+    { id: 'mvp', icon: '🏆', name: '联盟MVP', desc: '荣膺常规赛最有价值球员', rarity: 'legend', cat: 'honor' },
+    { id: 'fmvp', icon: '👑', name: '总决赛MVP', desc: '荣膺总决赛最有价值球员', rarity: 'legend', cat: 'honor' },
+    { id: 'mvp_x3', icon: '🐐', name: 'MVP王朝', desc: '同一生涯累计 3 座常规赛 MVP', rarity: 'legend', cat: 'honor' },
     // — 球队战绩 —
-    { id: 'playoffs', icon: '🎟️', name: '季后赛门票', desc: '首次带队打进季后赛', rarity: 'common' },
-    { id: 'win_60', icon: '🎊', name: '60 胜赛季', desc: '单赛季常规赛拿下 60 胜', rarity: 'epic' },
-    { id: 'champion', icon: '🏆', name: '总冠军', desc: '夺得总冠军', rarity: 'legend' },
-    { id: 'champion_x3', icon: '💍', name: '三连话题', desc: '同一生涯累计 3 座总冠军', rarity: 'legend' },
+    { id: 'playoffs', icon: '🎟️', name: '季后赛门票', desc: '首次带队打进季后赛', rarity: 'common', cat: 'team' },
+    { id: 'win_60', icon: '🎊', name: '60 胜赛季', desc: '单赛季常规赛拿下 60 胜', rarity: 'epic', cat: 'team' },
+    { id: 'champion', icon: '🏆', name: '总冠军', desc: '夺得总冠军', rarity: 'legend', cat: 'team' },
+    { id: 'champion_x3', icon: '💍', name: '三冠伟业', desc: '同一生涯累计 3 座总冠军（球队不限）', rarity: 'legend', cat: 'team' },
+    // — 王朝：同一支球队连续夺冠（与 champion_x3 的"跨球队累计"互不重复） —
+    { id: 'dynasty_2', icon: '👑', name: '王朝初成', desc: '随同一支球队连续 2 年夺得总冠军', rarity: 'epic', cat: 'team' },
+    { id: 'dynasty_3', icon: '🏛️', name: '三连霸业', desc: '随同一支球队连续 3 年夺得总冠军', rarity: 'legend', cat: 'team' },
+    { id: 'dynasty_4', icon: '🔱', name: '传奇王朝', desc: '随同一支球队连续 4 年夺得总冠军', rarity: 'legend', cat: 'team' },
     // — 数据里程碑（单场） —
-    { id: 'game_40', icon: '🔥', name: '40 分之夜', desc: '单场砍下 40+ 得分', rarity: 'rare' },
-    { id: 'game_50', icon: '💥', name: '50 分神迹', desc: '单场砍下 50+ 得分', rarity: 'epic' },
-    { id: 'triple_double', icon: '🎰', name: '三双', desc: '单场砍下三双', rarity: 'rare' },
+    { id: 'game_40', icon: '🔥', name: '40分之夜', desc: '单场砍下 40+ 得分', rarity: 'rare', cat: 'game' },
+    { id: 'game_50', icon: '💥', name: '50分神迹', desc: '单场砍下 50+ 得分', rarity: 'epic', cat: 'game' },
+    { id: 'triple_double', icon: '🎰', name: '三双', desc: '单场砍下三双', rarity: 'rare', cat: 'game' },
     // — 数据里程碑（赛季场均） —
-    { id: 'avg_30', icon: '📊', name: '得分机器', desc: '赛季场均 30+ 得分', rarity: 'epic' },
-    { id: 'season_25_10', icon: '🧱', name: '两双基石', desc: '赛季场均 25 分 10 板', rarity: 'epic' },
+    { id: 'avg_30', icon: '📊', name: '得分机器', desc: '赛季场均 30+ 得分', rarity: 'epic', cat: 'season' },
+    { id: 'season_25_10', icon: '🧱', name: '两双基石', desc: '赛季场均 25 分 10 板', rarity: 'epic', cat: 'season' },
     // — 生涯长度 —
-    { id: 'season_5', icon: '📅', name: '中生代', desc: '效力满 5 个赛季', rarity: 'common' },
-    { id: 'season_10', icon: '🏛️', name: '一朝元老', desc: '效力满 10 个赛季', rarity: 'rare' },
-    { id: 'retire', icon: '🎓', name: '功成身退', desc: '完成一段完整生涯并退役', rarity: 'epic' },
+    { id: 'season_5', icon: '📅', name: '中生代', desc: '效力满 5 个赛季', rarity: 'common', cat: 'career' },
+    { id: 'season_10', icon: '🏛️', name: '一朝元老', desc: '效力满 10 个赛季', rarity: 'rare', cat: 'career' },
+    { id: 'retire', icon: '🎓', name: '功成身退', desc: '完成一段完整生涯并退役', rarity: 'epic', cat: 'career' },
     // — 现实 NBA 追加：荣誉 & 数据里程碑（2026-09-05） —
-    { id: 'all_rookie_team', icon: '🌱', name: '新锐之星', desc: '入选最佳新秀阵容', rarity: 'rare' },
-    { id: 'game_60', icon: '💥', name: '六十分盛宴', desc: '单场砍下 60+ 得分', rarity: 'epic' },
-    { id: 'game_70', icon: '🌋', name: '七十分神迹', desc: '单场砍下 70+ 得分', rarity: 'legend' },
-    { id: 'quadruple_double', icon: '🃏', name: '四双传奇', desc: '单场砍下四双（四项数据上双）', rarity: 'legend' },
-    { id: 'game_20_ast', icon: '🎩', name: '喂饼大师', desc: '单场送出 20+ 助攻', rarity: 'epic' },
-    { id: 'game_20_reb', icon: '🧱', name: '禁区巨兽', desc: '单场摘下 20+ 篮板', rarity: 'epic' },
-    { id: 'avg_10_ast', icon: '📡', name: '助攻机器', desc: '赛季场均 10+ 助攻', rarity: 'epic' },
-    { id: 'avg_12_reb', icon: '🛡️', name: '篮板王座', desc: '赛季场均 12+ 篮板', rarity: 'epic' },
-    { id: 'avg_35', icon: '🎯', name: '得分王', desc: '赛季场均 35+ 得分', rarity: 'epic' },
-    { id: 'career_20000', icon: '🏆', name: '两万分先生', desc: '生涯总得分突破 20000', rarity: 'rare' },
-    { id: 'career_30000', icon: '👑', name: '三万分先生', desc: '生涯总得分突破 30000', rarity: 'epic' },
-    { id: 'career_40000', icon: '🌟', name: '四万分传奇', desc: '生涯总得分突破 40000', rarity: 'legend' },
-    { id: 'career_50000', icon: '🐐', name: '五万分之神', desc: '生涯总得分突破 50000', rarity: 'legend' },
+    { id: 'all_rookie_team', icon: '🌱', name: '新锐之星', desc: '入选最佳新秀阵容', rarity: 'rare', cat: 'honor' },
+    { id: 'game_60', icon: '💥', name: '60分盛宴', desc: '单场砍下 60+ 得分', rarity: 'epic', cat: 'game' },
+    { id: 'game_70', icon: '🌋', name: '70分神迹', desc: '单场砍下 70+ 得分', rarity: 'legend', cat: 'game' },
+    { id: 'game_100', icon: '💯', name: '100分神话', desc: '单场砍下 100+ 得分，超越 NBA 历史单场得分纪录', rarity: 'legend', cat: 'game' },
+    { id: 'quadruple_double', icon: '🃏', name: '四双传奇', desc: '单场砍下四双（四项数据上双）', rarity: 'legend', cat: 'game' },
+    { id: 'game_20_ast', icon: '🎩', name: '喂饼大师', desc: '单场送出 20+ 助攻', rarity: 'epic', cat: 'game' },
+    { id: 'game_20_reb', icon: '🧱', name: '禁区巨兽', desc: '单场摘下 20+ 篮板', rarity: 'epic', cat: 'game' },
+    { id: 'avg_10_ast', icon: '📡', name: '助攻机器', desc: '赛季场均 10+ 助攻', rarity: 'epic', cat: 'season' },
+    { id: 'avg_12_reb', icon: '🛡️', name: '篮板王座', desc: '赛季场均 12+ 篮板', rarity: 'epic', cat: 'season' },
+    { id: 'avg_35', icon: '🎯', name: '场均35分', desc: '赛季场均 35+ 得分', rarity: 'legend', cat: 'season' },
+    { id: 'avg_triple_double', icon: '🎪', name: '场均三双', desc: '赛季场均数据全部上双', rarity: 'legend', cat: 'season' },
+    { id: 'career_20000', icon: '🏆', name: '两万分先生', desc: '生涯总得分突破 20000', rarity: 'rare', cat: 'career' },
+    { id: 'career_30000', icon: '👑', name: '三万分先生', desc: '生涯总得分突破 30000', rarity: 'epic', cat: 'career' },
+    { id: 'career_40000', icon: '🌟', name: '四万分传奇', desc: '生涯总得分突破 40000', rarity: 'legend', cat: 'career' },
+    { id: 'career_50000', icon: '🐐', name: '五万分之神', desc: '生涯总得分突破 50000', rarity: 'legend', cat: 'career' },
+    // — 联盟数据王：赛季数据榜登顶（2026-10-10） —
+    { id: 'scoring_champ', icon: '🏀', name: '得分王', desc: '赛季场均得分领跑全联盟', rarity: 'epic', cat: 'data' },
+    { id: 'reb_champ', icon: '🧱', name: '篮板王', desc: '赛季场均篮板领跑全联盟', rarity: 'rare', cat: 'data' },
+    { id: 'ast_champ', icon: '🎯', name: '助攻王', desc: '赛季场均助攻领跑全联盟', rarity: 'rare', cat: 'data' },
+    { id: 'stl_champ', icon: '🤲', name: '抢断王', desc: '赛季抢断数领跑全联盟', rarity: 'rare', cat: 'data' },
+    { id: 'blk_champ', icon: '🚫', name: '盖帽王', desc: '赛季盖帽数领跑全联盟', rarity: 'rare', cat: 'data' },
+    { id: 'three_champ', icon: '🏹', name: '三分王', desc: '赛季命中三分数领跑全联盟', rarity: 'epic', cat: 'data' },
+    { id: 'data_sweep', icon: '👑', name: '数据全制霸', desc: '同一赛季同时拿下得分王、篮板王与助攻王', rarity: 'legend', cat: 'data' },
+    // — 奖项补齐：评奖引擎已产出但此前无成就（2026-10-10） —
+    { id: 'mip', icon: '📈', name: '进步最快', desc: '当选进步最快球员', rarity: 'epic', cat: 'honor' },
+    { id: 'all_defense', icon: '🛡️', name: '最佳防守阵容', desc: '入选一届最佳防守阵容', rarity: 'epic', cat: 'honor' },
+    // — 退役结局：历史地位线（2026-10-10） —
+    { id: 'jersey_retired', icon: '🎽', name: '球衣升空', desc: '至少有一支球队为你退役球衣', rarity: 'epic', cat: 'legacy' },
+    { id: 'hall_of_fame', icon: '🗿', name: '名人堂', desc: '入选奈史密斯篮球名人堂', rarity: 'epic', cat: 'legacy' },
+    { id: 'top100', icon: '💯', name: '历史百大', desc: '正式入选 NBA 历史百大', rarity: 'legend', cat: 'legacy' },
+    { id: 'goat', icon: '🐐', name: '历史最佳', desc: '以统治级表现成为历史最佳', rarity: 'legend', cat: 'legacy' },
     // — 彩蛋 —
-    { id: 'explorer', icon: '🧭', name: '成就猎人', desc: '解锁 10 个成就', rarity: 'rare' },
-    { id: 'collector', icon: '🗂️', name: '收藏家', desc: '解锁 20 个成就', rarity: 'legend' }
+    { id: 'explorer', icon: '🧭', name: '成就猎人', desc: '解锁 15 个成就', rarity: 'rare', cat: 'meta' },
+    { id: 'collector', icon: '🗂️', name: '收藏家', desc: '解锁 30 个成就', rarity: 'legend', cat: 'meta' },
+    { id: 'completionist', icon: '💎', name: '成就大师', desc: '解锁 45 个成就', rarity: 'legend', cat: 'meta' }
   ];
   PP_FX.ACHIEVEMENTS = ACHIEVEMENTS;
   var ACH_MAP = {};
   ACHIEVEMENTS.forEach(function (a) { ACH_MAP[a.id] = a; });
 
   var RARITY_CN = { common: '普通', rare: '稀有', epic: '史诗', legend: '传奇' };
+
+  // 分类元数据：面板按此顺序分组，count 是彩蛋类里程碑的解锁门槛。
+  var ACH_CATS = [
+    { id: 'start',   name: '起步',   icon: '🌱' },
+    { id: 'draft',   name: '选秀',   icon: '🎯' },
+    { id: 'honor',   name: '个人荣誉', icon: '🏅' },
+    { id: 'team',    name: '球队战绩', icon: '🎟️' },
+    { id: 'data',    name: '数据王', icon: '📊' },
+    { id: 'game',    name: '单场爆发', icon: '🔥' },
+    { id: 'season',  name: '赛季场均', icon: '📈' },
+    { id: 'career',  name: '生涯累计', icon: '🏛️' },
+    { id: 'legacy',  name: '退役传奇', icon: '🗿' },
+    { id: 'meta',    name: '彩蛋',   icon: '🧭' }
+  ];
+  PP_FX.ACH_CATS = ACH_CATS;
+  // 成就未显式指定 cat 时的兜底分组，避免新成就从面板里消失。
+  var DEFAULT_CAT = 'start';
+  // 彩蛋类里程碑门槛：随成就总数增长上调，旧的解锁记录继续有效。
+  var META_MILESTONES = [
+    { id: 'explorer',      at: 15 },
+    { id: 'collector',     at: 30 },
+    { id: 'completionist', at: 45 }
+  ];
+  PP_FX.META_MILESTONES = META_MILESTONES;
 
   function loadUnlocked() {
     try {
@@ -374,21 +474,25 @@
     saveUnlocked(unlocked);
     if (!PP_FX._suppressAchievementPopups) showUnlockPopup(def);
     // 元成就：解锁数量里程碑（延迟以免与当前弹窗叠加）
-    var n = unlockedCount();
-    if (!PP_FX._suppressAchievementPopups) {
-      if (n >= 10 && !unlocked['explorer']) setTimeout(function () { PP_FX.unlock('explorer'); }, 2600);
-      if (n >= 20 && !unlocked['collector']) setTimeout(function () { PP_FX.unlock('collector'); }, 2600);
-    }
+    if (!PP_FX._suppressAchievementPopups) scheduleMetaMilestones();
     return true;
   };
+
+  // 彩蛋类里程碑按META_MILESTONES 的门槛依次补齐；延迟弹窗避免与当前弹窗叠加。
+  function scheduleMetaMilestones() {
+    META_MILESTONES.forEach(function (m) {
+      setTimeout(function () {
+        if (!unlocked[m.id] && unlockedCount() >= m.at) PP_FX.unlock(m.id);
+      }, 2600);
+    });
+  }
 
   // Deterministic reconciliation used after migrations/tests; normal gameplay
   // keeps the delayed popup cadence above.
   PP_FX.syncMetaAchievements = function () {
-    var n = unlockedCount();
-    if (n >= 10 && !unlocked.explorer) PP_FX.unlock('explorer');
-    n = unlockedCount();
-    if (n >= 20 && !unlocked.collector) PP_FX.unlock('collector');
+    META_MILESTONES.forEach(function (m) {
+      if (!unlocked[m.id] && unlockedCount() >= m.at) PP_FX.unlock(m.id);
+    });
     return unlockedCount();
   };
 
@@ -447,7 +551,42 @@
   PP_FX.achRingSVG = achRingSVG;
 
   /* ==================== 成就面板 ==================== */
-  PP_FX.openPanel = function () {
+  // 分类定义表驱动渲染：成就本身只声明 cat，面板结构完全由 ACH_CATS 决定，
+  // 这样以后新增成就不需要改面板代码。未登记的 cat 会自动追加到末尾。
+  function orderedCats() {
+    var seen = {}, list = [];
+    ACH_CATS.forEach(function (c) { seen[c.id] = true; list.push(c); });
+    ACHIEVEMENTS.forEach(function (a) {
+      var cat = a.cat || DEFAULT_CAT;
+      if (!seen[cat]) { seen[cat] = true; list.push({ id: cat, name: cat, icon: '🏅' }); }
+    });
+    return list;
+  }
+
+  function achCardHtml(a) {
+    var has = !!unlocked[a.id];
+    // 未解锁时隐藏名称与描述，只留剪影，避免剧透门槛。
+    return '<div class="pp-ach-item rarity-' + a.rarity + (has ? ' got' : ' locked') + '">' +
+      '<div class="pp-ach-badge">' +
+        '<div class="pp-ach-badge-ring">' + achRingSVG(a.rarity) + '</div>' +
+        '<div class="pp-ach-badge-ic">' + (has ? a.icon : '🔒') + '</div>' +
+      '</div>' +
+      '<div class="pp-ach-meta">' +
+        '<div class="pp-ach-name">' + (has ? a.name : '？？？') + '</div>' +
+        '<div class="pp-ach-desc">' + (has ? a.desc : '未解锁') + '</div>' +
+      '</div>' +
+      '<div class="pp-ach-rarity">' + (RARITY_CN[a.rarity] || '') + '</div>' +
+    '</div>';
+  }
+
+  // 每个分类的统计：总数 / 已解锁 / 是否全通（左侧标签上的小圆点用）。
+  function catStat(catId) {
+    var list = ACHIEVEMENTS.filter(function (a) { return (a.cat || DEFAULT_CAT) === catId; });
+    var got = list.filter(function (a) { return !!unlocked[a.id]; }).length;
+    return { list: list, got: got, total: list.length, full: list.length > 0 && got === list.length };
+  }
+
+  PP_FX.openPanel = function (startCat) {
     // 读档后先按当前生涯事实重新校验，及时撤回旧版重复计数造成的误解锁。
     syncAchievementState();
     var existing = $('pp-ach-panel');
@@ -455,20 +594,28 @@
     var total = ACHIEVEMENTS.length;
     var got = unlockedCount();
     var pct = Math.round(got / total * 100);
-    var cards = ACHIEVEMENTS.map(function (a) {
-      var has = !!unlocked[a.id];
-      return '<div class="pp-ach-item rarity-' + a.rarity + (has ? ' got' : ' locked') + '">' +
-        '<div class="pp-ach-badge">' +
-          '<div class="pp-ach-badge-ring">' + achRingSVG(a.rarity) + '</div>' +
-          '<div class="pp-ach-badge-ic">' + (has ? a.icon : '🔒') + '</div>' +
-        '</div>' +
-        '<div class="pp-ach-meta">' +
-          '<div class="pp-ach-name">' + (has ? a.name : '？？？') + '</div>' +
-          '<div class="pp-ach-desc">' + a.desc + '</div>' +
-        '</div>' +
-        '<div class="pp-ach-rarity">' + (RARITY_CN[a.rarity] || '') + '</div>' +
-      '</div>';
+
+    // 只渲染有成就的分类；tabs 与 body 都从同一份 stats 派生，保证两侧一致。
+    var stats = orderedCats().map(function (c) {
+      var s = catStat(c.id);
+      return s.total ? { id: c.id, name: c.name, icon: c.icon, got: s.got, total: s.total, full: s.full } : null;
+    }).filter(Boolean);
+    if (!stats.length) stats = [{ id: DEFAULT_CAT, name: '成就', icon: '🏅', got: 0, total: total, full: false }];
+
+    // 默认停在「个人荣誉」，没有内容则退到第一个有成就的分类。
+    var activeId = (startCat && stats.some(function (s) { return s.id === startCat; })) ? startCat
+      : (stats.some(function (s) { return s.id === 'honor'; }) ? 'honor' : stats[0].id);
+
+    var tabs = stats.map(function (s) {
+      return '<button type="button" class="pp-ach-tab' + (s.id === activeId ? ' active' : '') +
+        (s.full ? ' done' : '') + '" data-cat="' + s.id + '">' +
+        (s.full ? '<span class="pp-ach-tab-full"></span>' : '') +
+        '<span class="pp-ach-tab-ic">' + s.icon + '</span>' +
+        '<span class="pp-ach-tab-nm">' + s.name + '</span>' +
+        '<span class="pp-ach-tab-nt">' + s.got + '/' + s.total + '</span>' +
+      '</button>';
     }).join('');
+
     var overlay = ce('div'); overlay.id = 'pp-ach-panel'; overlay.className = 'pp-ach-panel-overlay';
     overlay.innerHTML =
       '<div class="pp-ach-panel">' +
@@ -483,10 +630,44 @@
           '<div class="pp-ach-progress-bar"><div class="pp-ach-progress-fill" style="width:' + pct + '%"></div></div>' +
           '<div class="pp-ach-progress-txt">已解锁 ' + got + ' / ' + total + '（' + pct + '%）</div>' +
         '</div>' +
-        '<div class="pp-ach-grid">' + cards + '</div>' +
+        '<div class="pp-ach-body">' +
+          '<div class="pp-ach-tabs" id="pp-ach-tabs" role="tablist">' + tabs + '</div>' +
+          '<div class="pp-ach-content" id="pp-ach-content"></div>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function () { overlay.classList.add('show'); });
+
+    // 右侧只渲染当前分类；切标签时整体替换，分类进度条重新走一次宽度动画。
+    function renderBody(catId) {
+      var s = stats.filter(function (x) { return x.id === catId; })[0];
+      if (!s) return;
+      var box = $('pp-ach-content');
+      var list = catStat(s.id).list;
+      var cPct = s.total ? Math.round(s.got / s.total * 100) : 0;
+      box.innerHTML =
+        '<div class="pp-ach-cat-head">' +
+          '<span class="pp-ach-cat-title">' + s.icon + ' ' + s.name + '</span>' +
+          '<span class="pp-ach-cat-num">' + s.got + ' / ' + s.total + '</span>' +
+        '</div>' +
+        '<div class="pp-ach-cat-bar"><div class="pp-ach-cat-fill" style="width:' + cPct + '%"></div></div>' +
+        '<div class="pp-ach-grid">' + list.map(achCardHtml).join('') + '</div>';
+      box.scrollTop = 0;
+    }
+
+    $('pp-ach-tabs').addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.pp-ach-tab') : null;
+      if (!btn) return;
+      var id = btn.getAttribute('data-cat');
+      if (!id || btn.classList.contains('active')) return;
+      Array.prototype.forEach.call(this.querySelectorAll('.pp-ach-tab'), function (t) {
+        t.classList.toggle('active', t === btn);
+      });
+      renderBody(id);
+    });
+
+    renderBody(activeId);
+
     function close() { overlay.classList.remove('show'); setTimeout(function () { overlay.remove(); }, 300); }
     $('pp-ach-close').onclick = close;
     var toLg = $('pp-ach-to-legacy');
@@ -502,19 +683,26 @@
   // 每次开启新生涯(揭晓球员时)按已购强化，给初始属性/OVR 永久加成——即"重生奖励"。
   // 设计要点：LP 由成就稀有度决定，跨生涯保留；强化可叠加但有上限，避免破坏平衡。
   var LEGACY_KEY = 'pp_legacy_v1';
-  var LEGACY_SCHEMA_VERSION = 2;
+  // v6：新增「王朝初成」(epic) 与「三连霸业」「传奇王朝」(legend) 三项球队成就，
+  // LP 产出 265 → 285，全路线成本同步抬到 288，缺口仍锁定 3 点。
+  var LEGACY_SCHEMA_VERSION = 6;
+  // 固定缺口：玩家拿满全部成就的 LP 仍差这么多点，只能放弃部分路线。
+  // 方向必须是「成本 > 产出」，LEGACY_TREE_COST_CHECK 会在测试里锁死这一点。
+  var LEGACY_COST_GAP = 3;
   var LP_BY_RARITY = { common: 1, rare: 2, epic: 4, legend: 8 };
 
   // 强化项：costs 为购买 Lv.1 → 满级的逐级消耗。高阶成本明显增加，
   // 全路线总成本高于全部成就可获得的 LP，玩家必须做专精取舍。
+  // v6：前两级保持低价（早期里程碑手感不变），只抬高 Lv.3 起的价格，
+  // 全路线 268 → 288，与新增王朝成就的 LP 产出 +20 对齐。
   // attrs 用主引擎 13 项属性键（threePT/MID/FIN/DNK/HAN/PAS/PDEF/IDEF/BLK/REB/ATH/STR/CLU）。
   var LEGACY_PERKS = [
-    { id: 'scorer',    icon: '🎯', name: '得分天赋', desc: '每级 三分/中投/终结 +1', max: 5, costs: [3, 4, 5, 7, 9], attrs: ['threePT', 'MID', 'FIN'] },
-    { id: 'playmaker', icon: '🎩', name: '组织视野', desc: '每级 传球/控球 +1', max: 5, costs: [3, 4, 5, 7, 9], attrs: ['PAS', 'HAN'] },
-    { id: 'defender',  icon: '🛡️', name: '防守本能', desc: '每级 外防/内防/盖帽 +1', max: 5, costs: [3, 4, 5, 7, 9], attrs: ['PDEF', 'IDEF', 'BLK'] },
-    { id: 'athlete',   icon: '💪', name: '身体天赋', desc: '每级 运动/力量/篮板 +1', max: 5, costs: [3, 4, 5, 7, 9], attrs: ['ATH', 'STR', 'REB'] },
-    { id: 'clutch',    icon: '❄️', name: '大心脏',   desc: '每级 关键 +2', max: 4, costs: [4, 6, 8, 10], attrs: ['CLU'], step: 2 },
-    { id: 'prodigy',   icon: '🌟', name: '天选之才', desc: '每级 全属性 +1（最贵）', max: 3, costs: [10, 14, 20],
+    { id: 'scorer',    icon: '🎯', name: '得分天赋', desc: '每级 三分/中投/终结 +1', max: 5, costs: [3, 5, 8, 11, 15], attrs: ['threePT', 'MID', 'FIN'] },
+    { id: 'playmaker', icon: '🎩', name: '组织视野', desc: '每级 传球/控球 +1', max: 5, costs: [3, 5, 8, 11, 15], attrs: ['PAS', 'HAN'] },
+    { id: 'defender',  icon: '🛡️', name: '防守本能', desc: '每级 外防/内防/盖帽 +1', max: 5, costs: [3, 5, 8, 11, 15], attrs: ['PDEF', 'IDEF', 'BLK'] },
+    { id: 'athlete',   icon: '💪', name: '身体天赋', desc: '每级 运动/力量/篮板 +1', max: 5, costs: [3, 5, 8, 11, 15], attrs: ['ATH', 'STR', 'REB'] },
+    { id: 'clutch',    icon: '❄️', name: '大心脏',   desc: '每级 关键 +2', max: 4, costs: [6, 10, 16, 24], attrs: ['CLU'], step: 2 },
+    { id: 'prodigy',   icon: '🌟', name: '天选之才', desc: '每级 全属性 +1（最贵）', max: 3, costs: [12, 21, 31],
       attrs: ['threePT', 'MID', 'FIN', 'DNK', 'HAN', 'PAS', 'PDEF', 'IDEF', 'BLK', 'REB', 'ATH', 'STR', 'CLU'] }
   ];
   PP_FX.LEGACY_PERKS = LEGACY_PERKS;
@@ -669,7 +857,10 @@
           '<button class="pp-ach-close" id="pp-lg-close" aria-label="关闭">✕</button>' +
         '</div>' +
         '<div class="pp-lg-lp"></div>' +
-        '<div class="pp-lg-hint">解锁成就积累传承点，投入永久强化。每条路线越往后越贵；全部成就最多提供 ' + maxLegacyLP() + ' 点，而全路线共需 ' + legacyTreeCost() + ' 点，无法同时点满，请选择自己的长期专精。</div>' +
+        '<div class="pp-lg-hint">解锁成就积累传承点，投入永久强化。每条路线越往后越贵；全部成就最多提供 ' +
+          maxLegacyLP() + ' 点，而全路线共需 ' + legacyTreeCost() + ' 点，' +
+          '即使拿满全部成就仍差 ' + (legacyTreeCost() - maxLegacyLP()) + ' 点，' +
+          '无法同时点满，请选择自己的长期专精。</div>' +
         '<div class="pp-ach-grid pp-lg-grid"></div>' +
         '<div class="pp-lg-foot"><button class="pp-lg-respec" id="pp-lg-respec">重置强化并返还全部传承点</button></div>' +
       '</div>';
@@ -714,18 +905,28 @@
   }
   function displayName() { try { return window.getHupuDisplayName ? getHupuDisplayName() : ''; } catch (e) { return ''; } }
 
+  // 彩蛋类里程碑自身也计入解锁数，直接用 unlockedCount 会产生循环依赖
+  // （解锁 A 让计数达标 → 解锁 B → 计数更高）。这里统一按“非彩蛋成就数”
+  // 作为门槛基准，语义也更符合“解锁 N 个成就”的玩家直觉。
+  function nonMetaUnlockedCount() {
+    var n = 0;
+    for (var k in unlocked) {
+      if (!Object.prototype.hasOwnProperty.call(unlocked, k)) continue;
+      var def = ACH_MAP[k];
+      if (def && def.cat !== 'meta') n++;
+    }
+    return n;
+  }
+
+  // 撤回因成就被回收而失效的彩蛋里程碑（门槛已不满足则删除）。
   function repairMetaAchievementsAfterRemoval() {
     var changed = false;
-    var realCount = unlockedCount();
-    if (unlocked.collector && realCount - 1 < 20) {
-      delete unlocked.collector;
-      changed = true;
-    }
-    realCount = unlockedCount();
-    if (unlocked.explorer && realCount - 1 < 10) {
-      delete unlocked.explorer;
-      changed = true;
-    }
+    META_MILESTONES.forEach(function (m) {
+      if (unlocked[m.id] && nonMetaUnlockedCount() < m.at) {
+        delete unlocked[m.id];
+        changed = true;
+      }
+    });
     return changed;
   }
 
@@ -869,7 +1070,10 @@
       mvp: 'mvp', fmvp: 'fmvp', allstarmvp: 'allStarMvp',
       dpoy: 'dpoy', roty: 'roty', roy: 'roty', sixthman: 'sixthman',
       allstar: 'allStar', allnba: 'allNBA', allrookie: 'allRookie',
-      alldefensive: 'allDefense', champion: 'champion'
+      alldefensive: 'allDefense', champion: 'champion',
+      mip: 'mip',
+      scoringchamp: 'scoringChamp', rebchamp: 'rebChamp', astchamp: 'astChamp',
+      stlchamp: 'stlChamp', blkchamp: 'blkChamp', threechamp: 'threeChamp'
     };
     if (actKinds[act]) return actKinds[act];
 
@@ -888,6 +1092,13 @@
     if (clean === '最佳新秀阵容' || clean === '最佳新秀一阵' || clean === '最佳新秀二阵' || clean === '新秀一阵' || clean === '新秀二阵' || clean === 'ALL-ROOKIE') return 'allRookie';
     if (clean === '最佳防守阵容' || clean === '最佳防守一阵' || clean === '最佳防守二阵' || clean === '一防' || clean === '二防' || clean === 'ALL-DEFENSIVE') return 'allDefense';
     if (clean === '总冠军' || clean === 'NBA总冠军') return 'champion';
+    if (clean === '进步最快' || clean === '进步最快球员' || clean === '进步最快球星' || clean === 'MIP') return 'mip';
+    if (clean === '得分王' || clean === '联盟得分王') return 'scoringChamp';
+    if (clean === '篮板王' || clean === '联盟篮板王') return 'rebChamp';
+    if (clean === '助攻王' || clean === '联盟助攻王') return 'astChamp';
+    if (clean === '抢断王' || clean === '联盟抢断王') return 'stlChamp';
+    if (clean === '盖帽王' || clean === '联盟盖帽王') return 'blkChamp';
+    if (clean === '三分王' || clean === '联盟三分王') return 'threeChamp';
     return '';
   }
   PP_FX.classifyAchievementAward = classifyAward;
@@ -944,6 +1155,8 @@
     if (ppg >= 25 && rpg >= 10) PP_FX.unlock('season_25_10');
     if (apg >= 10) PP_FX.unlock('avg_10_ast');
     if (rpg >= 12) PP_FX.unlock('avg_12_reb');
+    // 场均三双：得分/篮板/助攻三项均值全部达到 10。
+    if (ppg >= 10 && rpg >= 10 && apg >= 10) PP_FX.unlock('avg_triple_double');
   }
 
   function unlockGameStatMilestones(stats) {
@@ -956,6 +1169,7 @@
     if (points >= 50) PP_FX.unlock('game_50');
     if (points >= 60) PP_FX.unlock('game_60');
     if (points >= 70) PP_FX.unlock('game_70');
+    if (points >= 100) PP_FX.unlock('game_100');
     if (ast >= 20) PP_FX.unlock('game_20_ast');
     if (reb >= 20) PP_FX.unlock('game_20_reb');
     var doubleDigits = 0;
@@ -1008,7 +1222,71 @@
     if (currentSeason.isPlayoffs || currentSeason.playoffBracket || isPlayoffResult(currentSeason.playoffResult)) PP_FX.unlock('playoffs');
     unlockSeasonStatMilestones(currentSeason.playerStats);
     (currentSeason.games || []).forEach(function(game) { unlockGameStatMilestones(game && game.stats); });
+
+    unlockLegacyEndingMilestones(career.legacy);
   }
+
+  // 退役结局成就：读calculateLegacyResult() 的结算结果。
+  // legacy 在 announcePlayerRetirement 时才写入 career，读取前存档会得到undefined，
+  // 此时直接跳过，等退役结算跑完再由 syncAchievementState 补判。
+  function unlockLegacyEndingMilestones(legacy) {
+    if (!legacy) return;
+    if (legacy.jersey || (Array.isArray(legacy.jerseyTeams) && legacy.jerseyTeams.length)) {
+      PP_FX.unlock('jersey_retired');
+    }
+    if (legacy.hof) PP_FX.unlock('hall_of_fame');
+    if (legacy.top100) PP_FX.unlock('top100');
+    if (legacy.goat) PP_FX.unlock('goat');
+  }
+
+  // 王朝判定：还原「每个夺冠赛季效力的是哪支球队」，再对同一球队的夺冠
+  // 赛季按赛季号取最长连续段。
+  // 两个关键点：
+  // 1) team 必须取自 seasons[].team —— 与该赛季同一条记录，中途转会才不会串味；
+  //    用当前 STATE.careerTeam 反推会把转会后的球队算到旧赛季头上。
+  // 2) 已归档（_careerSaved）时该赛季已进 seasons，不能再当"当前赛季"补一次，
+  //    否则会凭空多出一冠、把两连冠算成三连冠。
+  function collectDynastyRun(s) {
+    var career = (s && s.career) || {};
+    var seasons = Array.isArray(career.seasons) ? career.seasons : [];
+    var titlesByTeam = {};
+    function markTitle(team, seasonNum) {
+      if (!team || !seasonNum) return;
+      var t = String(team);
+      if (!titlesByTeam[t]) titlesByTeam[t] = {};
+      titlesByTeam[t][seasonNum] = true;
+    }
+    function isChampionEntry(a) {
+      return classifyAward(a, typeof a === 'string' ? a : String((a && a.label) || '')) === 'champion';
+    }
+    seasons.forEach(function (season) {
+      if (!season) return;
+      var num = Number(season.seasonNum) || 0;
+      if (!num) return;
+      var won = (Array.isArray(season.awards) ? season.awards : []).some(isChampionEntry);
+      // 极旧存档可能没有落 awards，用季后赛结果兜底。
+      if (!won) won = String(season.playoffResult || '').indexOf('总冠军') >= 0;
+      if (won) markTitle(season.team, num);
+    });
+    if (s && s.season && !s._careerSaved) {
+      var curNum = (Number(career.seasonCount) || 0) + 1;
+      var curWon = !!s.season.isChampion ||
+        (Array.isArray(s.season.awards) ? s.season.awards : []).some(isChampionEntry);
+      if (curWon) markTitle(s.careerTeam, curNum);
+    }
+    var best = 0, bestTeam = '';
+    Object.keys(titlesByTeam).forEach(function (t) {
+      var nums = Object.keys(titlesByTeam[t]).map(Number).sort(function (a, b) { return a - b; });
+      var run = 0, prev = null;
+      nums.forEach(function (n) {
+        run = (prev != null && n === prev + 1) ? run + 1 : 1;
+        if (run > best) { best = run; bestTeam = t; }
+        prev = n;
+      });
+    });
+    return { run: best, team: bestTeam };
+  }
+  PP_FX.collectDynastyRun = collectDynastyRun;
 
   function syncAchievementState() {
     var s = G(); if (!s) return {};
@@ -1016,7 +1294,8 @@
     var facts = {
       mvp:0, fmvp:0, dpoy:false, roty:false, sixthman:false,
       allStar:false, allNBA:false, allRookie:false, allDefense:false,
-      champion:0, falsePositiveTargets:{}
+      mip:false, dataTitles:{}, dataSweep:false,
+      champion:0, dynastyRun:0, dynastyTeam:'', falsePositiveTargets:{}
     };
     var seen = {};
     function keyFor(a, scope) {
@@ -1046,11 +1325,23 @@
       if (kind === 'dpoy') facts.dpoy = true;
       if (kind === 'roty') facts.roty = true;
       if (kind === 'sixthman') facts.sixthman = true;
+      if (kind === 'mip') facts.mip = true;
       if (kind === 'allStar' || kind === 'allStarMvp') facts.allStar = true;
       if (kind === 'allNBA') facts.allNBA = true;
       if (kind === 'allRookie') facts.allRookie = true;
       if (kind === 'allDefense') facts.allDefense = true;
       if (kind === 'champion') facts.champion++;
+      // 数据王按赛季归档，"同一赛季同时拿下得分/篮板/助攻王" 才算全制霸。
+      var DATA_KINDS = {
+        scoringChamp: 'scoring_champ', rebChamp: 'reb_champ', astChamp: 'ast_champ',
+        stlChamp: 'stl_champ', blkChamp: 'blk_champ', threeChamp: 'three_champ'
+      };
+      if (DATA_KINDS[kind]) {
+        var dId = DATA_KINDS[kind];
+        var dSeason = String(a && a.seasonNum != null && a.seasonNum !== '' ? a.seasonNum : (scope === 'current' && s.career ? (s.career.seasonCount || 0) + 1 : scope));
+        if (!facts.dataTitles[dId]) facts.dataTitles[dId] = {};
+        facts.dataTitles[dId][dSeason] = true;
+      }
     }
     // saveCurrentSeasonToCareer() 归档后不会立刻清空 season.awards；此时同一座
     // 冠军已存在于 career.honors / career.seasons，继续扫描 current 会重复计数。
@@ -1082,13 +1373,41 @@
     if (facts.roty) unlockWithFactEvidence('roty', s, 'roty');
     if (facts.allRookie) unlockWithFactEvidence('all_rookie_team', s, 'allRookie');
     if (facts.sixthman) unlockWithFactEvidence('sixth_man', s, 'sixthman');
+    if (facts.mip) unlockWithFactEvidence('mip', s, 'mip');
+    if (facts.allDefense) unlockWithFactEvidence('all_defense', s, 'allDefense');
     if (facts.allStar) unlockWithFactEvidence('all_star', s, 'allStar');
     if (facts.allNBA) unlockWithFactEvidence('all_nba', s, 'allNBA');
+    // 数据王：任一赛季登顶任意一个数据榜即解锁对应成就。
+    Object.keys(facts.dataTitles).forEach(function (dId) {
+      unlockWithFactEvidence(dId, s, dId, Object.keys(facts.dataTitles[dId]).length);
+    });
+    // 全制霸要求得分/篮板/助攻王落在同一个赛季，跨赛季拿到三个不算。
+    var bigThree = ['scoring_champ', 'reb_champ', 'ast_champ'];
+    var sweepSeason = '';
+    Object.keys(facts.dataTitles).forEach(function (dId) {
+      Object.keys(facts.dataTitles[dId]).forEach(function (sn) {
+        if (sweepSeason && sweepSeason !== sn) return;
+        var all = bigThree.every(function (b) {
+          return facts.dataTitles[b] && Object.prototype.hasOwnProperty.call(facts.dataTitles[b], sn);
+        });
+        if (all) sweepSeason = sn;
+      });
+    });
+    if (sweepSeason) unlockWithFactEvidence('data_sweep', s, 'dataSweep', 1);
+    facts.dataSweep = !!sweepSeason;
     if (facts.champion > 0) {
       unlockWithFactEvidence('champion', s, 'champion', facts.champion);
       PP_FX.unlock('playoffs');
     }
     if (facts.champion >= 3) PP_FX.unlock('champion_x3', singleCareerEvidence(s, facts.champion, 2));
+    // 王朝：同一支球队的连续夺冠。与 champion_x3（跨球队累计）互斥判定，
+    // 三个门槛递进解锁，run 已经是最长连续段。
+    var dynasty = collectDynastyRun(s);
+    facts.dynastyRun = dynasty.run;
+    facts.dynastyTeam = dynasty.team;
+    if (dynasty.run >= 2) unlockWithFactEvidence('dynasty_2', s, 'dynastyRun', dynasty.run);
+    if (dynasty.run >= 3) unlockWithFactEvidence('dynasty_3', s, 'dynastyRun', dynasty.run);
+    if (dynasty.run >= 4) unlockWithFactEvidence('dynasty_4', s, 'dynastyRun', dynasty.run);
     PP_FX._achievementFacts = facts;
     return facts;
   }

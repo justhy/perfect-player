@@ -1,7 +1,118 @@
+# ============================================================================
+# perfect-player · Git 忽略规则
+#
+# ⚠️ 重要：本项目把游戏数据（assets/data/*.json、*.csv）与球员图片
+#    （assets/images/**/*.png，共 7000+ 文件）作为站点资源**有意提交**。
+#    切勿为了缩小仓库而忽略 assets/、*.json、*.csv、*.png —— 会直接导致
+#    GitHub Pages 部署后游戏读不到数据、白屏。
+# ============================================================================
+
+# ── 环境变量与密钥 ──────────────────────────────────────────────────────────
 .env
 .env.*
+!.env.example
+
+# ── CI / 部署产物 ───────────────────────────────────────────────────────────
+# .github/workflows/deploy.yml 每次 push 会生成 _site/ 再上传 Pages，
+# 纯中间产物，不应进版本库。
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# ── Node.js（本项目脚本只用内置模块，此处为将来装依赖兜底）───────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+*.tsbuildinfo
+
+# ── Python ─────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# ── 其他语言的常见产物 ───────────────────────────────────────────────────────
+target/                 # Rust / Java
+.gradle/
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.app/
+
+# ── 输出目录（保留既有规则）─────────────────────────────────────────────────
 output/
+outputs/
+dist/
+build/
+coverage/
+
+# ── 日志与运行时文件 ────────────────────────────────────────────────────────
 *.log
+logs/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.pid
+*.pid.lock
+*.seed
+
+# ── 编辑器 / IDE ───────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.history/
+*.code-workspace
+
+# ── 操作系统垃圾文件 ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ── 临时文件 / 备份 ─────────────────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+\#*\#
+
+# ── WorkBuddy 本地数据（项目记忆、会话数据，必须排除）─────────────────────
 .workbuddy/
+.wbapp_*
+*.genie
+
+# ── 本地草稿与临时记录 ──────────────────────────────────────────────────────
+*.local.md
+*.tmp.md
